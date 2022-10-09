@@ -26,3 +26,6 @@ chunk:
   border_off: "ChunkBorder: <red>Disabled</red>"
   force_on: "Forced Mode: <green>Enabled</green>"
   force_off: "Forced Mode: <red>Disabled</red>"
+  set_owner: "Owner is now <bold><player></bold>"
+  list: "<x> <z> (Chunk <chunk_x> <chunk_z>)"
+  team_unclaim_success: "<green>Success</green> Removed TeamClaim successfully"

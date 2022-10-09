@@ -24,3 +24,6 @@ chunk:
   border_off: 'Chunkgrenzen: <red>unsichtbar</red>'
   force_on: 'Force-Modus: <green>aktiviert</green>'
   force_off: 'Force-Modus: <red>deaktiviert</red>'
+  set_owner: "Der Besitzer ist jetzt <bold><player></bold>"
+  list: "<x> <z> (Chunk <chunk_x> <chunk_z>)"
+  team_unclaim_success: "<green>Teamchunk wurde erfolgrein unclaimed</green> "
