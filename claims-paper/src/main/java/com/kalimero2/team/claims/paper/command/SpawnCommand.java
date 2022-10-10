@@ -13,7 +13,7 @@ public class SpawnCommand extends CommandHandler{
     @Override
     public void register() {
         commandManager.command(
-                commandManager.commandBuilder("bed").handler(this::spawn)
+                commandManager.commandBuilder("spawn").handler(this::spawn)
         );
     }
 
