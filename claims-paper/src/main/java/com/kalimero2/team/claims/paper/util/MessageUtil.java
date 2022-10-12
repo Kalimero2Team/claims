@@ -19,9 +19,6 @@ public class MessageUtil {
     private final FileConfiguration internalConfig;
 
     public MessageUtil(File messageConfig){
-        if (!messageConfig.exists()) {
-            PaperClaims.plugin.saveResource(messageConfig.getName(), false);
-        }
         externalConfig = YamlConfiguration.loadConfiguration(messageConfig);
 
         InputStream inputStream = PaperClaims.plugin.getResource(messageConfig.getName());

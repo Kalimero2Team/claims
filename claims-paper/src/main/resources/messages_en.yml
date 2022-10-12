@@ -29,3 +29,6 @@ chunk:
   set_owner: "Owner is now <bold><player></bold>"
   list: "<x> <z> (Chunk <chunk_x> <chunk_z>)"
   team_unclaim_success: "<green>Success</green> Removed TeamClaim successfully"
+  add_claims: "<green>Success</green> Added <count> Chunks to <player>"
+  set_claims: "<green>Success</green> Set <player> to <count> Chunks"
+  get_claims: "<player> has <count> Chunks"

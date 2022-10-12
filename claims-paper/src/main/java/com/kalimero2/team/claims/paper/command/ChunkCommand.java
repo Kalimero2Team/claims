@@ -1,5 +1,6 @@
 package com.kalimero2.team.claims.paper.command;
 
+import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.bukkit.parsers.OfflinePlayerArgument;
 import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.paper.PaperClaims;
@@ -83,6 +84,32 @@ public class ChunkCommand extends CommandHandler{
         );
         commandManager.command(
                 commandManager.commandBuilder("chunk")
+                        .literal("limit")
+                        .literal("set")
+                        .permission("claims.admin.limit.set")
+                        .argument(OfflinePlayerArgument.of("target"))
+                        .argument(IntegerArgument.of("limit"))
+                        .handler(this::setLimit)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("limit")
+                        .literal("get")
+                        .permission("claims.admin.limit.get")
+                        .argument(OfflinePlayerArgument.of("target"))
+                        .handler(this::getLimit)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("limit")
+                        .literal("add")
+                        .permission("claims.admin.limit.get")
+                        .argument(OfflinePlayerArgument.of("target"))
+                        .argument(IntegerArgument.of("limit"))
+                        .handler(this::addToLimit)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
                         .literal("force")
                         .permission("claims.admin.force")
                         .handler(this::toggleForceMode)
@@ -103,6 +130,34 @@ public class ChunkCommand extends CommandHandler{
                         .handler(this::toggleBorder)
         );
     }
+
+    private void addToLimit(CommandContext<CommandSender> context) {
+        OfflinePlayer target = context.get("target");
+        int limit = context.get("limit");
+
+        ExtraPlayerData data = ClaimManager.getExtraPlayerData(target);
+        data.maxclaims = data.maxclaims + limit;
+        ClaimManager.setExtraPlayerData(target, data);
+
+    }
+
+    private void getLimit(CommandContext<CommandSender> context) {
+        OfflinePlayer target = context.get("target");
+
+        ExtraPlayerData data = ClaimManager.getExtraPlayerData(target);
+
+    }
+
+    private void setLimit(CommandContext<CommandSender> context) {
+        OfflinePlayer target = context.get("target");
+        int limit = context.get("limit");
+
+        ExtraPlayerData data = ClaimManager.getExtraPlayerData(target);
+        data.maxclaims = limit;
+        ClaimManager.setExtraPlayerData(target, data);
+    }
+
+
 
     private void teamClaim(CommandContext<CommandSender> context) {
         if(context.getSender() instanceof Player player){
