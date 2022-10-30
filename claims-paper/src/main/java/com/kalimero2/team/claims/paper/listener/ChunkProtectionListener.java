@@ -1,7 +1,7 @@
 package com.kalimero2.team.claims.paper.listener;
 
-import com.google.common.collect.Lists;
 import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import net.minecraft.world.entity.EntityType;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -41,9 +41,11 @@ import org.bukkit.event.player.PlayerTakeLecternBookEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 
-import java.util.List;
-
 public class ChunkProtectionListener implements Listener {
+    private boolean shouldCancel(Player player, Chunk bukkitChunk){
+        return shouldCancel(player, ClaimsChunk.of(bukkitChunk));
+    }
+
     private boolean shouldCancel(Player player, ClaimsChunk chunk){
         if(chunk.isClaimed()){
             if(chunk.hasOwner()){
@@ -58,24 +60,21 @@ public class ChunkProtectionListener implements Listener {
     }
 
     private boolean shouldCancel(Chunk originChunk, Chunk destChunk) {
+        return shouldCancel(ClaimsChunk.of(originChunk), ClaimsChunk.of(destChunk));
+    }
+
+    private boolean shouldCancel(ClaimsChunk originChunk, ClaimsChunk destChunk) {
         if(!originChunk.equals(destChunk)){
-            ClaimsChunk dest = ClaimsChunk.of(destChunk);
-            if(dest.isClaimed()){
-                ClaimsChunk origin = ClaimsChunk.of(originChunk);
-                if(origin.isClaimed()){
-                    if(dest.hasOwner()){
-                        if(origin.hasOwner()){
-                            return !dest.getOwner().equals(origin.getOwner());
-                        }else {
-                            return true;
-                        }
-                    }else {
-                        return true;
-                    }
+            if(destChunk.isClaimed()){
+                if(!destChunk.hasOwner()){
+                    return !originChunk.hasOwner();
                 }else {
-                    return true;
+                    if(originChunk.hasOwner()){
+                        return !originChunk.getOwner().equals(destChunk.getOwner());
+                    }
                 }
             }
+
         }
         return false;
     }
@@ -194,10 +193,12 @@ public class ChunkProtectionListener implements Listener {
     public void onInteractEvent(PlayerInteractEvent event){
         if(event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && event.getClickedBlock() != null){
             if(shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getClickedBlock().getChunk()))){
-                Material material = event.getClickedBlock().getType();
-                List<Material> protected_materials = Lists.newArrayList(Material.CHEST,Material.TRAPPED_CHEST,Material.BARREL,Material.SHULKER_BOX,Material.WHITE_SHULKER_BOX,Material.ORANGE_SHULKER_BOX,Material.MAGENTA_SHULKER_BOX,Material.LIGHT_BLUE_SHULKER_BOX,Material.YELLOW_SHULKER_BOX,Material.LIME_SHULKER_BOX,Material.PINK_SHULKER_BOX,Material.GRAY_SHULKER_BOX,Material.LIGHT_GRAY_SHULKER_BOX,Material.CYAN_SHULKER_BOX,Material.PURPLE_SHULKER_BOX,Material.BLUE_SHULKER_BOX,Material.BROWN_SHULKER_BOX,Material.GREEN_SHULKER_BOX,Material.RED_SHULKER_BOX,Material.BLACK_SHULKER_BOX,Material.FURNACE,Material.BLAST_FURNACE,Material.SMOKER,Material.BREWING_STAND,Material.DAMAGED_ANVIL,Material.JUKEBOX,Material.HOPPER,Material.DROPPER,Material.DISPENSER,Material.CAULDRON,Material.NOTE_BLOCK,Material.BEACON,Material.COMPARATOR,Material.REPEATER,Material.REDSTONE);
+                Material type = event.getClickedBlock().getType();
+                if(ClaimsChunk.of(event.getClickedBlock().getChunk()).shouldIgnoreInteractable(type)){
+                    return;
+                }
 
-                if(protected_materials.contains(material)){
+                if(type.isInteractable()){
                     event.setCancelled(true);
                     return;
                 }
@@ -311,6 +312,14 @@ public class ChunkProtectionListener implements Listener {
             if(shouldCancel(originChunk, destChunk)){
                 event.setCancelled(true);
             }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerItemFrameChange(PlayerItemFrameChangeEvent event){
+        ClaimsChunk claimsChunk = ClaimsChunk.of(event.getItemFrame().getChunk());
+        if(shouldCancel(event.getPlayer(), claimsChunk)){
+            event.setCancelled(true);
         }
     }
 

@@ -5,14 +5,22 @@ import com.kalimero2.team.claims.paper.util.SerializableChunk;
 import org.bukkit.OfflinePlayer;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.UUID;
 
 import static com.kalimero2.team.claims.paper.PaperClaims.plugin;
 
 public class ClaimManager {
 
+    public static final ArrayList<UUID> forcedPlayers = new ArrayList<>();
+
     public static ExtraPlayerData getExtraPlayerData(OfflinePlayer offlinePlayer){
-        File file = new File(plugin.playerDataFolder + "/"+ offlinePlayer.getUniqueId() + ".json");
+        return getExtraPlayerData(offlinePlayer.getUniqueId());
+    }
+
+    public static ExtraPlayerData getExtraPlayerData(UUID uuid){
+        File file = new File(plugin.playerDataFolder + "/"+ uuid + ".json");
         if(!file.exists()){
             int anInt = plugin.getConfig().getInt("claims.max-claims");
             return new ExtraPlayerData(new HashSet<>(), anInt);
@@ -21,7 +29,11 @@ public class ClaimManager {
     }
 
     public static void setExtraPlayerData(OfflinePlayer offlinePlayer, ExtraPlayerData extraPlayerData){
-        File file = new File(plugin.playerDataFolder + "/"+ offlinePlayer.getUniqueId() + ".json");
+        setExtraPlayerData(offlinePlayer.getUniqueId(), extraPlayerData);
+    }
+
+    public static void setExtraPlayerData(UUID uuid, ExtraPlayerData extraPlayerData){
+        File file = new File(plugin.playerDataFolder + "/"+ uuid + ".json");
         extraPlayerData.saveData(file.getAbsolutePath());
     }
 

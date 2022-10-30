@@ -1,5 +1,6 @@
 package com.kalimero2.team.claims.api;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -34,7 +35,10 @@ public abstract class ClaimsChunk {
 
     public abstract UUID getOwner();
 
+    @Deprecated(since = "1.0.2", forRemoval = true) // Use getTrustedList() instead
     public abstract UUID[] getTrusted();
+
+    public abstract List<UUID> getTrustedList();
 
     public abstract Map<String, String> getProperties();
 
@@ -42,7 +46,7 @@ public abstract class ClaimsChunk {
 
     public abstract void setOwner(UUID owner);
 
-    public abstract void setTrusted(UUID[] trusted);
+    public abstract void setTrusted(List<UUID> trusted);
 
     public abstract void setClaimed(boolean claimed);
 
@@ -58,7 +62,14 @@ public abstract class ClaimsChunk {
 
     public abstract void removeTrusted(UUID trusted);
 
-    public abstract  void clearTrusted();
+    public abstract void clearTrusted();
+
+    public abstract boolean shouldIgnoreInteractable(String material);
+    public abstract void setIgnoredInteractableMaterials(List<String> interactables);
+    public abstract List<String> getIgnoredInteractableMaterials();
+    public abstract void addIgnoredInteractable(String material);
+    public abstract void removeIgnoredInteractable(String material);
+    public abstract void clearIgnoredInteractables();
 
     @Override
     public boolean equals(Object o) {

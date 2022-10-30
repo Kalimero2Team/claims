@@ -2,8 +2,8 @@ package com.kalimero2.team.claims.paper;
 
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.paper.command.CommandManager;
+import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
-import com.kalimero2.team.claims.paper.listener.ChunkUnloadListener;
 import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
 import com.kalimero2.team.claims.paper.util.ChunkBorders;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
@@ -37,7 +37,7 @@ public class PaperClaims extends JavaPlugin implements ClaimsApi {
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(new ChunkProtectionListener(), this);
-        getServer().getPluginManager().registerEvents(new ChunkUnloadListener(), this);
+        getServer().getPluginManager().registerEvents(new ChunkLoadListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerMoveListener(), this);
 
         chunkBorders = new ChunkBorders(this);

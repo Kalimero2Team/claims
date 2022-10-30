@@ -1,3 +1,4 @@
 messages: "messages_en.yml"
 claims:
   max-claims: 16
+  worlds: ["world"]

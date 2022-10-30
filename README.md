@@ -1,5 +1,8 @@
 # claims
 
+TODO:
+- [ ] Rewrite Message System
+
 
 Libraries used:
 - [Paper API](https://github.com/PaperMC/Paper)
