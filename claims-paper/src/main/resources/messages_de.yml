@@ -29,7 +29,7 @@ chunk:
   set_owner: "Der Besitzer ist jetzt <bold><target></bold>"
   list: "<x> <z> (Chunk <chunk_x> <chunk_z>)"
   team_unclaim_success: "<green>Teamchunk wurde erfolgrein unclaimed</green> "
-  add_claims: "<green>Es wurden <bold><count></bold> Claims für <target> hinzugefügt</green>"
+  add_claims: "<green><target> hat jetzt <count> Chunks</green>"
   set_claims: "<green>Es wurden <bold><count></bold> Claims für <target> gesetzt</green>"
   get_claims: "<green><target> hat <bold><count></bold> Claims</green>"
   wipedata: "<green>Alle Chunk Daten wurden gelöscht</green>"

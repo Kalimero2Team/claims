@@ -2,14 +2,16 @@ package com.kalimero2.team.claims.paper.listener;
 
 import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
-import net.minecraft.world.entity.EntityType;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Creeper;
+import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.NPC;
@@ -23,7 +25,10 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockFertilizeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockMultiPlaceEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
@@ -64,19 +69,26 @@ public class ChunkProtectionListener implements Listener {
     }
 
     private boolean shouldCancel(ClaimsChunk originChunk, ClaimsChunk destChunk) {
-        if(!originChunk.equals(destChunk)){
-            if(destChunk.isClaimed()){
-                if(!destChunk.hasOwner()){
-                    return !originChunk.hasOwner();
-                }else {
+        if(originChunk.equals(destChunk)){
+            return false;
+        }
+        if(destChunk.isClaimed()){
+            if(originChunk.isClaimed()){
+                if(destChunk.hasOwner()){ // destChunk is claimed by a player
+                    if(originChunk.hasOwner()){ // originChunk is claimed by a player
+                        return !destChunk.getOwner().equals(originChunk.getOwner()); // if the owner of the originChunk is not the owner of the destChunk
+                    }
+                    return true; // originChunk is not claimed by a player, but destChunk is
+                }else{
                     if(originChunk.hasOwner()){
-                        return !originChunk.getOwner().equals(destChunk.getOwner());
+                        return true;
                     }
                 }
+            }else{
+                return true;
             }
-
         }
-        return false;
+        return true;
     }
 
     @EventHandler
@@ -166,10 +178,10 @@ public class ChunkProtectionListener implements Listener {
         if(event.getDamager() instanceof Player player){
             onEntityDamageByPlayer(event, player);
         }else{
+            if(event.getEntity() instanceof Hanging || event.getEntity() instanceof ArmorStand || event.getEntity() instanceof Tameable){
+                event.setCancelled(true);
+            }
             if(event.getDamager() instanceof Projectile projectile){
-                if(event.getEntity() instanceof Hanging){
-                    event.setCancelled(true);
-                }
                 if(projectile.getShooter() instanceof Player player){
                     if(shouldCancel(player, ClaimsChunk.of(event.getEntity().getChunk()))){
                         onEntityDamageByPlayer(event, player);
@@ -222,7 +234,6 @@ public class ChunkProtectionListener implements Listener {
         event.setCancelled(true);
     }
 
-
     @EventHandler
     public void onExplode(EntityExplodeEvent event){
         event.setCancelled(true);
@@ -260,9 +271,9 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
-        if(event.getEntity().getType().equals(EntityType.ENDERMAN)){
+        if(event.getEntity() instanceof Enderman){
             event.setCancelled(true);
-        }else if(event.getEntity().getType().equals(EntityType.BOAT)){
+        }else if(event.getEntity() instanceof Boat){
             if(ClaimsChunk.of(event.getBlock().getChunk()).isClaimed()){
                 event.setCancelled(true);
             }
@@ -288,8 +299,6 @@ public class ChunkProtectionListener implements Listener {
             }
         }
     }
-
-
 
 
     @EventHandler
@@ -319,6 +328,41 @@ public class ChunkProtectionListener implements Listener {
     public void onPlayerItemFrameChange(PlayerItemFrameChangeEvent event){
         ClaimsChunk claimsChunk = ClaimsChunk.of(event.getItemFrame().getChunk());
         if(shouldCancel(event.getPlayer(), claimsChunk)){
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onBlockPistonExtend(BlockPistonExtendEvent event){
+        Chunk originChunk = event.getBlock().getChunk();
+        for (Block block : event.getBlocks()) {
+            Chunk destChunk = block.getLocation().add(event.getDirection().getDirection()).getBlock().getChunk();
+            if (shouldCancel(originChunk, destChunk)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBlockPistonRetract(BlockPistonRetractEvent event){
+        Chunk originChunk = event.getBlock().getChunk();
+        for (Block block : event.getBlocks()) {
+            Chunk destChunk = block.getChunk();
+
+            if (shouldCancel(originChunk, destChunk)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBlockFromTo(BlockFromToEvent event){
+        Chunk originChunk = event.getBlock().getChunk();
+        Chunk destChunk = event.getToBlock().getChunk();
+
+        if(shouldCancel(originChunk, destChunk)){
             event.setCancelled(true);
         }
     }

@@ -53,14 +53,22 @@ public class ChunkLimitCommands extends CommandHandler{
         ExtraPlayerData data = ClaimManager.getExtraPlayerData(target);
         data.maxclaims = data.maxclaims + limit;
         ClaimManager.setExtraPlayerData(target, data);
-        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.add_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)));
+        String name = target.getName();
+        if (name == null) {
+            name = target.getUniqueId().toString();
+        }
+        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.add_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)),Placeholder.unparsed("target", name));
     }
 
     private void getLimit(CommandContext<CommandSender> context) {
         OfflinePlayer target = context.get("target");
 
         ExtraPlayerData data = ClaimManager.getExtraPlayerData(target);
-        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.get_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)));
+        String name = target.getName();
+        if (name == null) {
+            name = target.getUniqueId().toString();
+        }
+        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.get_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)),Placeholder.unparsed("target", name));
     }
 
     private void setLimit(CommandContext<CommandSender> context) {
@@ -70,7 +78,11 @@ public class ChunkLimitCommands extends CommandHandler{
         ExtraPlayerData data = ClaimManager.getExtraPlayerData(target);
         data.maxclaims = limit;
         ClaimManager.setExtraPlayerData(target, data);
-        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.set_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)));
+        String name = target.getName();
+        if (name == null) {
+            name = target.getUniqueId().toString();
+        }
+        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.set_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)), Placeholder.unparsed("target", name));
     }
 
 }
