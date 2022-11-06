@@ -1,6 +1,7 @@
 package com.kalimero2.team.claims.paper;
 
 import com.kalimero2.team.claims.api.ClaimsApi;
+import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
 import com.kalimero2.team.claims.paper.command.CommandManager;
 import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
@@ -8,10 +9,12 @@ import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
 import com.kalimero2.team.claims.paper.util.ChunkBorders;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
 import com.kalimero2.team.claims.paper.util.SerializableChunk;
+import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.UUID;
 
 public class PaperClaims extends JavaPlugin implements ClaimsApi {
 
@@ -57,5 +60,14 @@ public class PaperClaims extends JavaPlugin implements ClaimsApi {
 
     public MessageUtil getMessageUtil() {
         return messageUtil;
+    }
+
+    @Override
+    public com.kalimero2.team.claims.api.ClaimsChunk getChunk(int x, int z, UUID worldUUID) {
+        World world = getServer().getWorld(worldUUID);
+        if(world == null){
+            return null;
+        }
+        return ClaimsChunk.of(world.getChunkAt(x, z));
     }
 }
