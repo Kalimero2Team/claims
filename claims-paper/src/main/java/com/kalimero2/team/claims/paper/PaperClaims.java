@@ -1,6 +1,7 @@
 package com.kalimero2.team.claims.paper;
 
 import com.kalimero2.team.claims.api.ClaimsApi;
+import com.kalimero2.team.claims.api.ClaimsApiHolder;
 import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
 import com.kalimero2.team.claims.paper.command.CommandManager;
 import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
@@ -28,7 +29,7 @@ public class PaperClaims extends JavaPlugin implements ClaimsApi {
         if(plugin == null){
             plugin = this;
         }
-
+        ClaimsApiHolder.setApi(this);
         plugin.saveDefaultConfig();
 
         this.messageUtil = new MessageUtil( new File(this.getDataFolder()+"/"+ plugin.getConfig().getString("messages")));
