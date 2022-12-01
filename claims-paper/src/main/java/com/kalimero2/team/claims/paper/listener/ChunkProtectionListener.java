@@ -72,23 +72,23 @@ public class ChunkProtectionListener implements Listener {
         if(originChunk.equals(destChunk)){
             return false;
         }
-        if(destChunk.isClaimed()){
-            if(originChunk.isClaimed()){
+        if(destChunk.isClaimed()){ // destChunk is claimed
+            if(originChunk.isClaimed()){ // both chunks are claimed
                 if(destChunk.hasOwner()){ // destChunk is claimed by a player
-                    if(originChunk.hasOwner()){ // originChunk is claimed by a player
-                        return !destChunk.getOwner().equals(originChunk.getOwner()); // if the owner of the originChunk is not the owner of the destChunk
+                    if(originChunk.hasOwner()){ // both chunks are claimed by a player
+                        return !destChunk.getOwner().equals(originChunk.getOwner()); // true if different owner, false if same owner
                     }
-                    return true; // originChunk is not claimed by a player, but destChunk is
+                    return true; // destChunk is claimed by a player, originChunk isn't
                 }else{
                     if(originChunk.hasOwner()){
-                        return true;
+                        return true; // originChunk is claimed by a player, destChunk isn't
                     }
                 }
             }else{
-                return true;
+                return true; // originChunk is not claimed, dest chunk is claimed
             }
         }
-        return true;
+        return false; // destChunk is not claimed
     }
 
     @EventHandler
