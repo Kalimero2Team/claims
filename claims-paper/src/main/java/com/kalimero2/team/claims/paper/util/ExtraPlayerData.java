@@ -24,6 +24,21 @@ public class ExtraPlayerData implements Serializable {
         this.maxclaims = maxclaims;
     }
 
+    public static ExtraPlayerData loadData(String filePath) {
+        try {
+            Gson gson = new Gson();
+            Reader reader = Files.newBufferedReader(Path.of(filePath));
+
+            ExtraPlayerData data = gson.fromJson(reader, ExtraPlayerData.class);
+            reader.close();
+
+            return data;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public boolean saveData(String filePath) {
         try {
             Gson gson = new Gson();
@@ -37,21 +52,6 @@ public class ExtraPlayerData implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
-        }
-    }
-
-    public static ExtraPlayerData loadData(String filePath) {
-        try {
-            Gson gson = new Gson();
-            Reader reader = Files.newBufferedReader(Path.of(filePath));
-
-            ExtraPlayerData data = gson.fromJson(reader, ExtraPlayerData.class);
-            reader.close();
-
-            return data;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
     }
 

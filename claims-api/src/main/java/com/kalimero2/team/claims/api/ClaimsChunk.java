@@ -31,24 +31,24 @@ public abstract class ClaimsChunk {
 
     public abstract boolean isClaimed();
 
+    public abstract void setClaimed(boolean claimed);
+
     public abstract boolean hasOwner();
 
     public abstract UUID getOwner();
 
+    public abstract void setOwner(UUID owner);
+
     @Deprecated(since = "1.0.2", forRemoval = true) // Use getTrustedList() instead
     public abstract UUID[] getTrusted();
+
+    public abstract void setTrusted(List<UUID> trusted);
 
     public abstract List<UUID> getTrustedList();
 
     public abstract Map<String, String> getProperties();
 
     public abstract void setProperties(Map<String, String> properties);
-
-    public abstract void setOwner(UUID owner);
-
-    public abstract void setTrusted(List<UUID> trusted);
-
-    public abstract void setClaimed(boolean claimed);
 
     public abstract String getProperty(String key);
 
@@ -65,10 +65,15 @@ public abstract class ClaimsChunk {
     public abstract void clearTrusted();
 
     public abstract boolean shouldIgnoreInteractable(String material);
-    public abstract void setIgnoredInteractableMaterials(List<String> interactables);
+
     public abstract List<String> getIgnoredInteractableMaterials();
+
+    public abstract void setIgnoredInteractableMaterials(List<String> interactables);
+
     public abstract void addIgnoredInteractable(String material);
+
     public abstract void removeIgnoredInteractable(String material);
+
     public abstract void clearIgnoredInteractables();
 
     @Override

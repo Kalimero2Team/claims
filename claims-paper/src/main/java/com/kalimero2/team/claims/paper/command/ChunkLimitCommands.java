@@ -11,7 +11,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
 
-public class ChunkLimitCommands extends CommandHandler{
+public class ChunkLimitCommands extends CommandHandler {
     public ChunkLimitCommands(CommandManager commandManager) {
         super(commandManager);
     }
@@ -57,7 +57,7 @@ public class ChunkLimitCommands extends CommandHandler{
         if (name == null) {
             name = target.getUniqueId().toString();
         }
-        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.add_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)),Placeholder.unparsed("target", name));
+        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.add_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)), Placeholder.unparsed("target", name));
     }
 
     private void getLimit(CommandContext<CommandSender> context) {
@@ -68,7 +68,7 @@ public class ChunkLimitCommands extends CommandHandler{
         if (name == null) {
             name = target.getUniqueId().toString();
         }
-        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.get_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)),Placeholder.unparsed("target", name));
+        PaperClaims.plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.get_claims", Placeholder.unparsed("count", String.valueOf(data.maxclaims)), Placeholder.unparsed("target", name));
     }
 
     private void setLimit(CommandContext<CommandSender> context) {

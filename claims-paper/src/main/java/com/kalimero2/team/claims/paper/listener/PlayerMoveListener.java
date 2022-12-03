@@ -21,26 +21,26 @@ public class PlayerMoveListener implements Listener {
     private final HashMap<UUID, SerializableChunk> lastChunkMap = new HashMap<>();
 
     @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event){
+    public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if(lastChunkMap.get(player.getUniqueId()) == null){
+        if (lastChunkMap.get(player.getUniqueId()) == null) {
             lastChunkMap.put(player.getUniqueId(), SerializableChunk.fromBukkitChunk(player.getLocation().getChunk()));
         }
-        if(lastChunkMap.get(player.getUniqueId()).equals(SerializableChunk.fromBukkitChunk(player.getLocation().getChunk()))){
+        if (lastChunkMap.get(player.getUniqueId()).equals(SerializableChunk.fromBukkitChunk(player.getLocation().getChunk()))) {
             return;
-        }else{
+        } else {
             lastChunkMap.put(player.getUniqueId(), SerializableChunk.fromBukkitChunk(player.getLocation().getChunk()));
         }
 
 
         ClaimsChunk chunk = ClaimsChunk.of(event.getPlayer().getChunk());
-        if(chunk.isClaimed() && chunk.hasOwner()){
-            new BukkitRunnable(){
+        if (chunk.isClaimed() && chunk.hasOwner()) {
+            new BukkitRunnable() {
                 @Override
                 public void run() {
                     UUID uuid = chunk.getOwner();
                     String playername = plugin.getServer().getOfflinePlayer(uuid).getName();
-                    if(playername == null){
+                    if (playername == null) {
                         playername = "Unknown (UUID: " + uuid + ")";
                     }
                     // TODO: Put the message into messages.yml

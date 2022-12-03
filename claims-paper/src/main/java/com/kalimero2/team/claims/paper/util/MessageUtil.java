@@ -18,7 +18,7 @@ public class MessageUtil {
     private final FileConfiguration externalConfig;
     private final FileConfiguration internalConfig;
 
-    public MessageUtil(File messageConfig){
+    public MessageUtil(File messageConfig) {
         externalConfig = YamlConfiguration.loadConfiguration(messageConfig);
 
         InputStream inputStream = PaperClaims.plugin.getResource(messageConfig.getName());
@@ -28,27 +28,27 @@ public class MessageUtil {
         internalConfig = YamlConfiguration.loadConfiguration(inputStreamReader);
     }
 
-    public void sendMessage(CommandSender sender, String configString, TagResolver... tagResolvers){
-        sender.sendMessage(getMessage(configString,tagResolvers));
+    public void sendMessage(CommandSender sender, String configString, TagResolver... tagResolvers) {
+        sender.sendMessage(getMessage(configString, tagResolvers));
     }
 
-    public Component getMessage(String configString, TagResolver... tagResolvers){
+    public Component getMessage(String configString, TagResolver... tagResolvers) {
         return MiniMessage.miniMessage().deserialize(getString(configString), tagResolvers);
     }
 
 
-    public String getString(String configString){
-        if(externalConfig.contains(configString)){
+    public String getString(String configString) {
+        if (externalConfig.contains(configString)) {
             return externalConfig.getString(configString);
-        }else {
+        } else {
             return internalConfig.getString(configString);
         }
     }
 
-    public List<String> getStrings(String configString){
-        if(externalConfig.contains(configString)){
+    public List<String> getStrings(String configString) {
+        if (externalConfig.contains(configString)) {
             return externalConfig.getStringList(configString);
-        }else {
+        } else {
             return internalConfig.getStringList(configString);
         }
     }

@@ -18,7 +18,7 @@ import org.bukkit.entity.Player;
 
 import static com.kalimero2.team.claims.paper.claim.ClaimManager.forcedPlayers;
 
-public class ChunkAdminCommands extends CommandHandler{
+public class ChunkAdminCommands extends CommandHandler {
     public ChunkAdminCommands(CommandManager commandManager) {
         super(commandManager);
     }
@@ -61,7 +61,7 @@ public class ChunkAdminCommands extends CommandHandler{
     }
 
     private void wipeData(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player){
+        if (context.getSender() instanceof Player player) {
             ClaimsChunk claimsChunk = ClaimsChunk.of(player.getChunk());
             claimsChunk.setOwner(null);
             claimsChunk.clearTrusted();
@@ -73,22 +73,22 @@ public class ChunkAdminCommands extends CommandHandler{
     }
 
     private void teamClaim(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player){
+        if (context.getSender() instanceof Player player) {
             ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
-            if(chunk.isClaimed()){
-                PaperClaims.plugin.getMessageUtil().sendMessage(player,"chunk.claim_fail_already_claimed");
-            }else{
+            if (chunk.isClaimed()) {
+                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_already_claimed");
+            } else {
                 chunk.setClaimed(true);
-                PaperClaims.plugin.getMessageUtil().sendMessage(player,"chunk.claim_success");
+                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_success");
             }
         }
     }
 
     private void listClaimsOther(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player){
+        if (context.getSender() instanceof Player player) {
             OfflinePlayer target = context.get("target");
             ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(target);
-            player.sendMessage("Claims von ("+target.getName()+"): "+extraPlayerData.chunks.size());
+            player.sendMessage("Claims von (" + target.getName() + "): " + extraPlayerData.chunks.size());
             extraPlayerData.chunks.forEach(serializableChunk -> {
                 TagResolver.Single chunk_x = Placeholder.unparsed("chunk_x", String.valueOf(serializableChunk.x()));
                 TagResolver.Single chunk_z = Placeholder.unparsed("chunk_z", String.valueOf(serializableChunk.z()));
@@ -103,29 +103,29 @@ public class ChunkAdminCommands extends CommandHandler{
     }
 
     private void toggleForceMode(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player){
-            if(forcedPlayers.contains(player.getUniqueId())){
+        if (context.getSender() instanceof Player player) {
+            if (forcedPlayers.contains(player.getUniqueId())) {
                 forcedPlayers.remove(player.getUniqueId());
-                PaperClaims.plugin.getMessageUtil().sendMessage(player,"chunk.force_off");
-            }else{
+                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.force_off");
+            } else {
                 forcedPlayers.add(player.getUniqueId());
-                PaperClaims.plugin.getMessageUtil().sendMessage(player,"chunk.force_on");
+                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.force_on");
             }
         }
     }
 
     private void setOwner(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player){
-            if(context.getOptional("target").isPresent()){
+        if (context.getSender() instanceof Player player) {
+            if (context.getOptional("target").isPresent()) {
                 OfflinePlayer target = context.get("target");
                 ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
                 chunk.setOwner(target.getUniqueId());
                 TagResolver.Single target_placeholder = Placeholder.unparsed("target", target.getName() != null ? target.getName() : target.getUniqueId().toString());
-                PaperClaims.plugin.getMessageUtil().sendMessage(player,"chunk.set_owner",  target_placeholder);
-            }else{
+                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.set_owner", target_placeholder);
+            } else {
                 ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
                 chunk.setOwner(null);
-                PaperClaims.plugin.getMessageUtil().sendMessage(player,"chunk.set_owner", Placeholder.unparsed("target", "null"));
+                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.set_owner", Placeholder.unparsed("target", "null"));
             }
         }
     }

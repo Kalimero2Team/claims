@@ -16,7 +16,7 @@ import java.util.HashSet;
 
 import static com.kalimero2.team.claims.paper.claim.ClaimManager.forcedPlayers;
 
-public class ChunkTrustCommands extends CommandHandler{
+public class ChunkTrustCommands extends CommandHandler {
     public ChunkTrustCommands(CommandManager commandManager) {
         super(commandManager);
     }
@@ -35,7 +35,7 @@ public class ChunkTrustCommands extends CommandHandler{
                         .argument(OfflinePlayerArgument.of("target"))
                         .handler(this::trustRemove)
         );
-        commandManager.command(
+        /*commandManager.command(
                 commandManager.commandBuilder("chunk")
                         .literal("addAll")
                         .argument(OfflinePlayerArgument.of("target"))
@@ -46,43 +46,51 @@ public class ChunkTrustCommands extends CommandHandler{
                         .literal("removeAll")
                         .argument(OfflinePlayerArgument.of("target"))
                         .handler(this::trustRemoveAll)
-        );
+        );*/
     }
 
 
     private void trustAdd(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player) {
+        if (context.getSender() instanceof Player player) {
             ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
-            if((chunk.hasOwner() && chunk.getOwner().equals(player.getUniqueId())) ||forcedPlayers.contains(player.getUniqueId()) || (!chunk.hasOwner() && player.hasPermission("claims.admin.teamclaim"))) {
+            if (chunk.isClaimed() && ((chunk.hasOwner() && chunk.getOwner().equals(player.getUniqueId())) || forcedPlayers.contains(player.getUniqueId()) || (!chunk.hasOwner() && player.hasPermission("claims.admin.teamclaim")))) {
                 OfflinePlayer target = context.get("target");
-                chunk.addTrusted(target.getUniqueId());
                 TagResolver.Single target_placeholder = Placeholder.unparsed("target", target.getName() != null ? target.getName() : target.getUniqueId().toString());
+                if (chunk.getTrustedList().contains(target.getUniqueId())) {
+                    PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_add_fail_already_added", target_placeholder);
+                    return;
+                }
+                chunk.addTrusted(target.getUniqueId());
                 PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_add_success", target_placeholder);
             }
         }
     }
 
     private void trustRemove(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player) {
+        if (context.getSender() instanceof Player player) {
             ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
-            if((chunk.hasOwner() && chunk.getOwner().equals(player.getUniqueId())) || forcedPlayers.contains(player.getUniqueId()) || (!chunk.hasOwner() && player.hasPermission("claims.admin.teamclaim"))) {
+            if (chunk.isClaimed() && ((chunk.hasOwner() && chunk.getOwner().equals(player.getUniqueId())) || forcedPlayers.contains(player.getUniqueId()) || (!chunk.hasOwner() && player.hasPermission("claims.admin.teamclaim")))) {
                 OfflinePlayer target = context.get("target");
-                chunk.removeTrusted(target.getUniqueId());
                 TagResolver.Single target_placeholder = Placeholder.unparsed("target", target.getName() != null ? target.getName() : target.getUniqueId().toString());
-                PaperClaims.plugin.getMessageUtil().sendMessage(player,"chunk.claim_remove_success", target_placeholder);
+                if (!chunk.getTrustedList().contains(target.getUniqueId())) {
+                    PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_remove_fail_already_removed", target_placeholder);
+                    return;
+                }
+                chunk.removeTrusted(target.getUniqueId());
+                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_remove_success", target_placeholder);
             }
         }
     }
 
 
     private void trustAddAll(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player) {
+        if (context.getSender() instanceof Player player) {
             Player target = context.get("target");
             HashSet<SerializableChunk> chunks = ClaimManager.getExtraPlayerData(player).chunks;
             chunks.forEach(chunk -> {
                 ClaimsChunk claimsChunk = ClaimsChunk.of(chunk.toBukkitChunk());
-                if(claimsChunk.hasOwner()){
-                    if(claimsChunk.getOwner().equals(player.getUniqueId())){
+                if (claimsChunk.hasOwner()) {
+                    if (claimsChunk.getOwner().equals(player.getUniqueId())) {
                         claimsChunk.addTrusted(target.getUniqueId());
                     }
                 }
@@ -92,13 +100,13 @@ public class ChunkTrustCommands extends CommandHandler{
     }
 
     private void trustRemoveAll(CommandContext<CommandSender> context) {
-        if(context.getSender() instanceof Player player) {
+        if (context.getSender() instanceof Player player) {
             Player target = context.get("target");
             HashSet<SerializableChunk> chunks = ClaimManager.getExtraPlayerData(player).chunks;
             chunks.forEach(chunk -> {
                 ClaimsChunk claimsChunk = ClaimsChunk.of(chunk.toBukkitChunk());
-                if(claimsChunk.hasOwner()){
-                    if(claimsChunk.getOwner().equals(player.getUniqueId())){
+                if (claimsChunk.hasOwner()) {
+                    if (claimsChunk.getOwner().equals(player.getUniqueId())) {
                         claimsChunk.removeTrusted(target.getUniqueId());
                     }
                 }
