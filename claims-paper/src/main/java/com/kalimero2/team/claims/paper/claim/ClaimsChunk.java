@@ -12,6 +12,7 @@ import org.bukkit.NamespacedKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,13 +31,13 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
     }
 
     public static ClaimsChunk of(Chunk chunk) {
-        if(!cachedChunks.containsKey(chunk)){
+        if (!cachedChunks.containsKey(chunk)) {
             cachedChunks.put(chunk, new ClaimsChunk(chunk));
         }
         return cachedChunks.get(chunk);
     }
 
-    public static void removeFromCache(Chunk chunk){
+    public static void removeFromCache(Chunk chunk) {
         cachedChunks.remove(chunk);
     }
 
@@ -46,16 +47,45 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
     }
 
     @Override
+    public void setClaimed(boolean claimed) {
+        chunk.getPersistentDataContainer().set(getKey("claimed"), DataType.BOOLEAN, claimed);
+    }
+
+    @Override
     public boolean hasOwner() {
         return chunk.getPersistentDataContainer().has(getKey("owner"), DataType.UUID);
     }
 
     @Override
     public UUID getOwner() {
-        if(hasOwner()){
+        if (hasOwner()) {
             return chunk.getPersistentDataContainer().get(getKey("owner"), DataType.UUID);
         }
         return null;
+    }
+
+    @Override
+    public void setOwner(UUID owner) {
+        if (owner == null) {
+            if (hasOwner()) {
+                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(getOwner());
+                extraPlayerData.chunks.remove(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
+                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
+            }
+            chunk.getPersistentDataContainer().remove(getKey("owner"));
+        } else {
+            if (hasOwner()) {
+                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(getOwner());
+                extraPlayerData.chunks.remove(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
+                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
+            }
+            chunk.getPersistentDataContainer().set(getKey("owner"), DataType.UUID, owner);
+            if (hasOwner()) {
+                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(owner);
+                extraPlayerData.chunks.add(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
+                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
+            }
+        }
     }
 
     @Override
@@ -65,10 +95,19 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
     }
 
     @Override
+    public void setTrusted(List<UUID> trusted) {
+        if (trusted == null) {
+            chunk.getPersistentDataContainer().remove(getKey("trusted"));
+        } else {
+            chunk.getPersistentDataContainer().set(getKey("trusted"), MoreDataTypes.UUID_LIST, trusted);
+        }
+    }
+
+    @Override
     public List<UUID> getTrustedList() {
         // Migration from UUID[] to List<UUID>
         NamespacedKey namespacedKey = getKey("trusted");
-        if(chunk.getPersistentDataContainer().has(namespacedKey, MoreDataTypes.UUID_ARRAY)){
+        if (chunk.getPersistentDataContainer().has(namespacedKey, MoreDataTypes.UUID_ARRAY)) {
             UUID[] old_trusted_array = chunk.getPersistentDataContainer().get(namespacedKey, MoreDataTypes.UUID_ARRAY);
             if (old_trusted_array != null) {
                 List<UUID> trusted_list = new ArrayList<>(Arrays.asList(old_trusted_array));
@@ -80,19 +119,19 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
         // End of migration
 
         List<UUID> trusted = chunk.getPersistentDataContainer().get(namespacedKey, MoreDataTypes.UUID_LIST);
-        if(trusted == null){
+        if (trusted == null) {
             trusted = new ArrayList<>();
         }
         trusted.remove(null); // Prevent NPEs
-        return new ArrayList<>(trusted);
+        return new ArrayList<>(new HashSet<>(trusted)); // Remove duplicates
     }
 
     @Override
     public Map<String, String> getProperties() {
-        if(this.properties == null){
-            if(chunk.getPersistentDataContainer().has(getKey("properties"), MoreDataTypes.CHUNK_PROPERTY_MAP)){
+        if (this.properties == null) {
+            if (chunk.getPersistentDataContainer().has(getKey("properties"), MoreDataTypes.CHUNK_PROPERTY_MAP)) {
                 this.properties = chunk.getPersistentDataContainer().get(getKey("properties"), MoreDataTypes.CHUNK_PROPERTY_MAP);
-            }else{
+            } else {
                 this.properties = new HashMap<>();
             }
         }
@@ -101,53 +140,14 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
 
     @Override
     public void setProperties(Map<String, String> properties) {
-        if(properties == null) {
+        if (properties == null) {
             this.properties = new HashMap<>();
             chunk.getPersistentDataContainer().remove(getKey("properties"));
-        }else{
+        } else {
             this.properties = properties;
             chunk.getPersistentDataContainer().set(getKey("properties"), MoreDataTypes.CHUNK_PROPERTY_MAP, properties);
         }
     }
-
-    @Override
-    public void setOwner(UUID owner) {
-        if(owner == null){
-            if(hasOwner()){
-                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(getOwner());
-                extraPlayerData.chunks.remove(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
-                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
-            }
-            chunk.getPersistentDataContainer().remove(getKey("owner"));
-        }else{
-            if(hasOwner()){
-                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(getOwner());
-                extraPlayerData.chunks.remove(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
-                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
-            }
-            chunk.getPersistentDataContainer().set(getKey("owner"), DataType.UUID, owner);
-            if(hasOwner()){
-                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(owner);
-                extraPlayerData.chunks.add(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
-                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
-            }
-        }
-    }
-
-    @Override
-    public void setTrusted(List<UUID> trusted) {
-        if(trusted == null) {
-            chunk.getPersistentDataContainer().remove(getKey("trusted"));
-        }else {
-            chunk.getPersistentDataContainer().set(getKey("trusted"), MoreDataTypes.UUID_LIST, trusted);
-        }
-    }
-
-    @Override
-    public void setClaimed(boolean claimed) {
-        chunk.getPersistentDataContainer().set(getKey("claimed"), DataType.BOOLEAN, claimed);
-    }
-
     @Override
     public String getProperty(String key) {
         return getProperties().get(key);
@@ -196,42 +196,42 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
         return shouldIgnoreInteractable(Material.getMaterial(material));
     }
 
-    public boolean shouldIgnoreInteractable(Material material){
+    public boolean shouldIgnoreInteractable(Material material) {
         return getIgnoredInteractableBukkitMaterials().contains(material);
-    }
-
-    @Override
-    public void setIgnoredInteractableMaterials(List<String> ignoredInteractableMaterials) {
-        List<Material> materials = new ArrayList<>();
-        for(String material : ignoredInteractableMaterials){
-            materials.add(Material.getMaterial(material));
-        }
-        setIgnoredInteractableBukkitMaterials(materials);
-    }
-
-    public void setIgnoredInteractableBukkitMaterials(List<Material> ignoredInteractableMaterials) {
-        this.ignoredInteractableMaterials = ignoredInteractableMaterials;
-        chunk.getPersistentDataContainer().set(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST, ignoredInteractableMaterials);
     }
 
     @Override
     public List<String> getIgnoredInteractableMaterials() {
         List<String> materials = new ArrayList<>();
-        for(Material material : getIgnoredInteractableBukkitMaterials()){
+        for (Material material : getIgnoredInteractableBukkitMaterials()) {
             materials.add(material.name());
         }
         return materials;
     }
 
-    public List<Material> getIgnoredInteractableBukkitMaterials(){
-        if(ignoredInteractableMaterials == null){
-            if(chunk.getPersistentDataContainer().has(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST)){
+    @Override
+    public void setIgnoredInteractableMaterials(List<String> ignoredInteractableMaterials) {
+        List<Material> materials = new ArrayList<>();
+        for (String material : ignoredInteractableMaterials) {
+            materials.add(Material.getMaterial(material));
+        }
+        setIgnoredInteractableBukkitMaterials(materials);
+    }
+
+    public List<Material> getIgnoredInteractableBukkitMaterials() {
+        if (ignoredInteractableMaterials == null) {
+            if (chunk.getPersistentDataContainer().has(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST)) {
                 ignoredInteractableMaterials = chunk.getPersistentDataContainer().get(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST);
-            }else{
+            } else {
                 ignoredInteractableMaterials = new ArrayList<>();
             }
         }
         return ignoredInteractableMaterials;
+    }
+
+    public void setIgnoredInteractableBukkitMaterials(List<Material> ignoredInteractableMaterials) {
+        this.ignoredInteractableMaterials = ignoredInteractableMaterials;
+        chunk.getPersistentDataContainer().set(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST, ignoredInteractableMaterials);
     }
 
     @Override

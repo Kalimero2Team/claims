@@ -20,20 +20,20 @@ import java.util.UUID;
 public class PaperClaims extends JavaPlugin implements ClaimsApi {
 
     public static PaperClaims plugin;
-    private MessageUtil messageUtil;
     public File playerDataFolder;
     public ChunkBorders chunkBorders;
+    private MessageUtil messageUtil;
 
     @Override
     public void onLoad() {
-        if(plugin == null){
+        if (plugin == null) {
             plugin = this;
         }
         ClaimsApiHolder.setApi(this);
         plugin.saveDefaultConfig();
 
-        this.messageUtil = new MessageUtil( new File(this.getDataFolder()+"/"+ plugin.getConfig().getString("messages")));
-        this.playerDataFolder = new File(this.getDataFolder()+ "/playerdata/");
+        this.messageUtil = new MessageUtil(new File(this.getDataFolder() + "/" + plugin.getConfig().getString("messages")));
+        this.playerDataFolder = new File(this.getDataFolder() + "/playerdata/");
 
         ConfigurationSerialization.registerClass(SerializableChunk.class);
     }
@@ -66,7 +66,7 @@ public class PaperClaims extends JavaPlugin implements ClaimsApi {
     @Override
     public com.kalimero2.team.claims.api.ClaimsChunk getChunk(int x, int z, UUID worldUUID) {
         World world = getServer().getWorld(worldUUID);
-        if(world == null){
+        if (world == null) {
             return null;
         }
         return ClaimsChunk.of(world.getChunkAt(x, z));

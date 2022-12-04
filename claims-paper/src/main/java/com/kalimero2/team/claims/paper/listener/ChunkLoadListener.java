@@ -8,7 +8,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 public class ChunkLoadListener implements Listener {
 
     @EventHandler
-    public void onChunkUnload(ChunkUnloadEvent event){
+    public void onChunkUnload(ChunkUnloadEvent event) {
         ClaimsChunk.removeFromCache(event.getChunk());
     }
 }

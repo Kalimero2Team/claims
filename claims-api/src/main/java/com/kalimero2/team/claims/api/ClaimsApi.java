@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public interface ClaimsApi {
 
-    static ClaimsApi getApi(){
+    static ClaimsApi getApi() {
         return ClaimsApiHolder.getApi();
     }
 

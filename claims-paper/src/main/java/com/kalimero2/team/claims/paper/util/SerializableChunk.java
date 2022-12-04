@@ -29,10 +29,13 @@ public final class SerializableChunk implements ConfigurationSerializable, Seria
         return new SerializableChunk(chunk.getWorld().getUID(), chunk.getX(), chunk.getZ());
     }
 
+    public static SerializableChunk deserialize(Map<String, Object> map) {
+        return new SerializableChunk((UUID) map.get("world"), (int) map.get("x"), (int) map.get("z"));
+    }
+
     public Chunk toBukkitChunk() {
         return Objects.requireNonNull(Bukkit.getWorld(world), "World not found. World:" + world).getChunkAt(x, z);
     }
-
 
     @Override
     public @NotNull Map<String, Object> serialize() {
@@ -41,10 +44,6 @@ public final class SerializableChunk implements ConfigurationSerializable, Seria
         map.put("x", x);
         map.put("z", z);
         return map;
-    }
-
-    public static SerializableChunk deserialize(Map<String, Object> map) {
-        return new SerializableChunk((UUID) map.get("world"), (int) map.get("x"), (int) map.get("z"));
     }
 
     @Override
