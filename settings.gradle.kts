@@ -7,7 +7,7 @@ dependencyResolutionManagement{
             version("floodgate-api","2.0-SNAPSHOT")
             version("cloud", "1.8.0")
             version("customblockdata","2.1.0")
-            version("morepersistentdatatypes","2.3.1")
+            version("morepersistentdatatypes","2.4.0")
 
             library("floodgate-api","org.geysermc.floodgate","api").versionRef("floodgate-api")
             library("customblockdata","com.jeff_media","CustomBlockData").versionRef("customblockdata")
