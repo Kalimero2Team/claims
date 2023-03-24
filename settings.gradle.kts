@@ -2,7 +2,7 @@ dependencyResolutionManagement{
     versionCatalogs{
         create("libs"){
             // Core
-            plugin("shadow","com.github.johnrengelman.shadow").version("7.1.2")
+            plugin("shadow","com.github.johnrengelman.shadow").version("8.1.1")
 
             version("floodgate-api","2.0-SNAPSHOT")
             version("cloud", "1.8.0")
