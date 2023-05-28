@@ -15,7 +15,7 @@ dependencyResolutionManagement{
 
             // Paper
             plugin("paper-run","xyz.jpenilla.run-paper").version("2.0.1")
-            plugin("paper-userdev","io.papermc.paperweight.userdev").version("1.4.0")
+            plugin("paper-userdev","io.papermc.paperweight.userdev").version("1.5.5")
             plugin("plugin-yml","net.minecrell.plugin-yml.bukkit").version("0.5.2")
 
             version("paper-api","1.19.3-R0.1-SNAPSHOT")
