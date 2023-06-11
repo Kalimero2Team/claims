@@ -54,11 +54,6 @@ public class PaperClaims extends JavaPlugin implements ClaimsApi {
         }
     }
 
-    @Override
-    public void onDisable() {
-
-    }
-
     public MessageUtil getMessageUtil() {
         return messageUtil;
     }

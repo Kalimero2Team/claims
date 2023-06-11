@@ -2,12 +2,12 @@ dependencyResolutionManagement{
     versionCatalogs{
         create("libs"){
             // Core
-            plugin("shadow","com.github.johnrengelman.shadow").version("7.1.2")
+            plugin("shadow","com.github.johnrengelman.shadow").version("8.1.1")
 
             version("floodgate-api","2.0-SNAPSHOT")
             version("cloud", "1.8.0")
-            version("customblockdata","2.1.0")
-            version("morepersistentdatatypes","2.3.1")
+            version("customblockdata","2.2.0")
+            version("morepersistentdatatypes","2.4.0")
 
             library("floodgate-api","org.geysermc.floodgate","api").versionRef("floodgate-api")
             library("customblockdata","com.jeff_media","CustomBlockData").versionRef("customblockdata")
@@ -15,10 +15,10 @@ dependencyResolutionManagement{
 
             // Paper
             plugin("paper-run","xyz.jpenilla.run-paper").version("2.0.1")
-            plugin("paper-userdev","io.papermc.paperweight.userdev").version("1.4.0")
-            plugin("plugin-yml","net.minecrell.plugin-yml.bukkit").version("0.5.2")
+            plugin("paper-userdev","io.papermc.paperweight.userdev").version("1.5.5")
+            plugin("plugin-yml","net.minecrell.plugin-yml.bukkit").version("0.5.3")
 
-            version("paper-api","1.19.3-R0.1-SNAPSHOT")
+            version("paper-api","1.19.4-R0.1-SNAPSHOT")
 
             library("cloud-paper","cloud.commandframework","cloud-paper").versionRef("cloud")
         }
