@@ -5,7 +5,7 @@ dependencyResolutionManagement{
             plugin("shadow","com.github.johnrengelman.shadow").version("8.1.1")
 
             version("floodgate-api","2.0-SNAPSHOT")
-            version("cloud", "1.8.0")
+            version("cloud", "1.8.3")
             version("customblockdata","2.2.0")
             version("morepersistentdatatypes","2.4.0")
 
