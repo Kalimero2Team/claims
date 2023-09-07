@@ -13,12 +13,14 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Enderman;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.NPC;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Ravager;
+import org.bukkit.entity.Steerable;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
@@ -58,6 +60,8 @@ import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.projectiles.BlockProjectileSource;
 
+import java.util.Optional;
+
 public class ChunkProtectionListener implements Listener {
     private boolean shouldCancel(Player player, Chunk bukkitChunk) {
         return shouldCancel(player, ClaimsChunk.of(bukkitChunk));
@@ -84,19 +88,19 @@ public class ChunkProtectionListener implements Listener {
         if (originChunk.equals(destChunk)) {
             return false;
         }
-        if(destChunk.isClaimed()){ // destChunk is claimed
-            if(originChunk.isClaimed()){ // both chunks are claimed
-                if(destChunk.hasOwner()){ // destChunk is claimed by a player
-                    if(originChunk.hasOwner()){ // both chunks are claimed by a player
+        if (destChunk.isClaimed()) { // destChunk is claimed
+            if (originChunk.isClaimed()) { // both chunks are claimed
+                if (destChunk.hasOwner()) { // destChunk is claimed by a player
+                    if (originChunk.hasOwner()) { // both chunks are claimed by a player
                         return !destChunk.getOwner().equals(originChunk.getOwner()); // true if different owner, false if same owner
                     }
                     return true; // destChunk is claimed by a player, originChunk isn't
-                }else{
-                    if(originChunk.hasOwner()){
+                } else {
+                    if (originChunk.hasOwner()) {
                         return true; // originChunk is claimed by a player, destChunk isn't
                     }
                 }
-            }else{
+            } else {
                 return true; // originChunk is not claimed, dest chunk is claimed
             }
         }
@@ -397,7 +401,15 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onEntityInteract(EntityInteractEvent event) {
         if (ClaimsChunk.of(event.getBlock().getChunk()).isClaimed()) {
-            event.setCancelled(true);
+            if (event.getEntity() instanceof Steerable steerable) {
+                // EntityInteractEvent isn't called when a Java Player is riding with a pig over a pressure plate but when a Bedrock Player is riding with a pig over a pressure plate the event is fired (because GeyserHacks is "faking" the Riding and causes the event to be fired). For Java players it is probably another event or a Bukkit bug.
+                Optional<Entity> any = steerable.getPassengers().stream().filter(entity -> entity instanceof Player).findAny();
+                if (any.isEmpty()) {
+                    event.setCancelled(true);
+                }
+            } else {
+                event.setCancelled(true);
+            }
         }
     }
 
