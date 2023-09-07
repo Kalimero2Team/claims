@@ -4,7 +4,7 @@ plugins {
 
 allprojects{
     group = "com.kalimero2.team"
-    version = "1.1.5-SNAPSHOT"
+    version = "1.1.6"
 }
 
 java {
