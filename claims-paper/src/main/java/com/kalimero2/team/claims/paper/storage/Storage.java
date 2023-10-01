@@ -61,13 +61,13 @@ public class Storage {
         //
 
         // GROUP
-        // ID, OWNER, MAX_CHUNKS, PLAYER_OWNED
+        // ID, OWNER, MAX_CHUNKS, IS_PLAYER
 
         executeUpdate("CREATE TABLE IF NOT EXISTS GROUPS(" +
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "OWNER VARCHAR(36) NOT NULL," +
                 "MAX_CHUNKS INTEGER NOT NULL," +
-                "PLAYER_OWNED BOOLEAN NOT NULL" +
+                "IS_PLAYER BOOLEAN NOT NULL" +
                 ");");
 
 
@@ -101,10 +101,10 @@ public class Storage {
                 ");");
 
 
-        // ACCESSLISTS
+        // CHUNK_MEMBERS
         // ID, CHUNK, PLAYER
 
-        executeUpdate("CREATE TABLE IF NOT EXISTS ACCESSLISTS(" +
+        executeUpdate("CREATE TABLE IF NOT EXISTS CHUNK_MEMBERS(" +
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "CHUNK INTEGER NOT NULL REFERENCES CHUNKS(ID)," +
                 "GROUP INTEGER NOT NULL REFERENCES GROUPS(ID)" +
@@ -139,7 +139,8 @@ public class Storage {
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "CHUNK_ID INTEGER NOT NULL REFERENCES CHUNKS(ID)," +
                 "ENTITY_ID INTEGER NOT NULL," +
-                "STATE TINYINT NOT NULL" +
+                "INTERACT BOOLEAN NOT NULL," +
+                "DAMAGE BOOLEAN NOT NULL," +
                 ");");
 
     }
