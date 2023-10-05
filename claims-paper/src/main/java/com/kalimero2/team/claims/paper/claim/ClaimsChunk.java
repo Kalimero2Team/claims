@@ -1,18 +1,12 @@
 package com.kalimero2.team.claims.paper.claim;
 
-import com.jeff_media.morepersistentdatatypes.DataType;
 import com.kalimero2.team.claims.paper.PaperClaims;
-import com.kalimero2.team.claims.paper.util.ExtraPlayerData;
-import com.kalimero2.team.claims.paper.util.MoreDataTypes;
-import com.kalimero2.team.claims.paper.util.SerializableChunk;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -43,49 +37,28 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
 
     @Override
     public boolean isClaimed() {
-        return Boolean.TRUE.equals(chunk.getPersistentDataContainer().get(getKey("claimed"), DataType.BOOLEAN));
+        return false;
     }
 
     @Override
     public void setClaimed(boolean claimed) {
-        chunk.getPersistentDataContainer().set(getKey("claimed"), DataType.BOOLEAN, claimed);
+
     }
 
     @Override
     public boolean hasOwner() {
-        return chunk.getPersistentDataContainer().has(getKey("owner"), DataType.UUID);
+        return false;
+
     }
 
     @Override
     public UUID getOwner() {
-        if (hasOwner()) {
-            return chunk.getPersistentDataContainer().get(getKey("owner"), DataType.UUID);
-        }
         return null;
     }
 
     @Override
     public void setOwner(UUID owner) {
-        if (owner == null) {
-            if (hasOwner()) {
-                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(getOwner());
-                extraPlayerData.chunks.remove(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
-                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
-            }
-            chunk.getPersistentDataContainer().remove(getKey("owner"));
-        } else {
-            if (hasOwner()) {
-                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(getOwner());
-                extraPlayerData.chunks.remove(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
-                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
-            }
-            chunk.getPersistentDataContainer().set(getKey("owner"), DataType.UUID, owner);
-            if (hasOwner()) {
-                ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(owner);
-                extraPlayerData.chunks.add(SerializableChunk.fromBukkitChunk(getBukkitChunk()));
-                ClaimManager.setExtraPlayerData(getOwner(), extraPlayerData);
-            }
-        }
+
     }
 
     @Override
@@ -96,94 +69,48 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
 
     @Override
     public void setTrusted(List<UUID> trusted) {
-        if (trusted == null) {
-            chunk.getPersistentDataContainer().remove(getKey("trusted"));
-        } else {
-            chunk.getPersistentDataContainer().set(getKey("trusted"), MoreDataTypes.UUID_LIST, trusted);
-        }
+
     }
 
     @Override
     public List<UUID> getTrustedList() {
-        // Migration from UUID[] to List<UUID>
-        NamespacedKey namespacedKey = getKey("trusted");
-        if (chunk.getPersistentDataContainer().has(namespacedKey, MoreDataTypes.UUID_ARRAY)) {
-            UUID[] old_trusted_array = chunk.getPersistentDataContainer().get(namespacedKey, MoreDataTypes.UUID_ARRAY);
-            if (old_trusted_array != null) {
-                List<UUID> trusted_list = new ArrayList<>(Arrays.asList(old_trusted_array));
-                trusted_list.remove(null);
-                chunk.getPersistentDataContainer().remove(namespacedKey);
-                setTrusted(trusted_list);
-            }
-        }
-        // End of migration
-
-        List<UUID> trusted = chunk.getPersistentDataContainer().get(namespacedKey, MoreDataTypes.UUID_LIST);
-        if (trusted == null) {
-            trusted = new ArrayList<>();
-        }
-        trusted.remove(null); // Prevent NPEs
-        return new ArrayList<>(new HashSet<>(trusted)); // Remove duplicates
+        return null;
     }
 
     @Override
     public Map<String, String> getProperties() {
-        if (this.properties == null) {
-            if (chunk.getPersistentDataContainer().has(getKey("properties"), MoreDataTypes.CHUNK_PROPERTY_MAP)) {
-                this.properties = chunk.getPersistentDataContainer().get(getKey("properties"), MoreDataTypes.CHUNK_PROPERTY_MAP);
-            } else {
-                this.properties = new HashMap<>();
-            }
-        }
-        return this.properties;
+        return null;
     }
 
     @Override
     public void setProperties(Map<String, String> properties) {
-        if (properties == null) {
-            this.properties = new HashMap<>();
-            chunk.getPersistentDataContainer().remove(getKey("properties"));
-        } else {
-            this.properties = properties;
-            chunk.getPersistentDataContainer().set(getKey("properties"), MoreDataTypes.CHUNK_PROPERTY_MAP, properties);
-        }
+
     }
     @Override
     public String getProperty(String key) {
-        return getProperties().get(key);
+        return null;
     }
 
     @Override
     public void addProperty(String key, String value) {
-        Map<String, String> properties = getProperties();
-        properties.put(key, value);
-        setProperties(properties);
+
     }
 
     @Override
     public void removeProperty(String key) {
-        Map<String, String> properties = getProperties();
-        properties.remove(key);
-        setProperties(properties);
     }
 
     @Override
     public boolean isTrusted(UUID uuid) {
-        return getTrustedList().contains(uuid);
+        return false;
     }
 
     @Override
     public void addTrusted(UUID trusted) {
-        List<UUID> trustedList = getTrustedList();
-        trustedList.add(trusted);
-        setTrusted(trustedList);
     }
 
     @Override
     public void removeTrusted(UUID trusted) {
-        List<UUID> trustedList = getTrustedList();
-        trustedList.remove(trusted);
-        setTrusted(trustedList);
     }
 
     @Override
@@ -219,19 +146,12 @@ public class ClaimsChunk extends com.kalimero2.team.claims.api.ClaimsChunk {
     }
 
     public List<Material> getIgnoredInteractableBukkitMaterials() {
-        if (ignoredInteractableMaterials == null) {
-            if (chunk.getPersistentDataContainer().has(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST)) {
-                ignoredInteractableMaterials = chunk.getPersistentDataContainer().get(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST);
-            } else {
-                ignoredInteractableMaterials = new ArrayList<>();
-            }
-        }
+        ignoredInteractableMaterials = new ArrayList<>();
         return ignoredInteractableMaterials;
     }
 
     public void setIgnoredInteractableBukkitMaterials(List<Material> ignoredInteractableMaterials) {
-        this.ignoredInteractableMaterials = ignoredInteractableMaterials;
-        chunk.getPersistentDataContainer().set(getKey("ignored_interactable_materials"), MoreDataTypes.MATERIAL_LIST, ignoredInteractableMaterials);
+
     }
 
     @Override

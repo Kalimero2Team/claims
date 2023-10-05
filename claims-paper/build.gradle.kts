@@ -17,8 +17,6 @@ repositories {
 dependencies {
     paperDevBundle(libs.versions.paper.api.get())
     bukkitLibrary(libs.cloud.paper)
-    implementation(libs.customblockdata)
-    implementation(libs.morepersistentdatatypes)
     implementation(project(":claims-api"))
 }
 
@@ -29,14 +27,12 @@ tasks{
 
     shadowJar{
         fun reloc(pkg: String, name: String) = relocate(pkg, "com.kalimero2.team.claims.paper.shaded.$name")
-        reloc("com.jeff_media.customblockdata","customblockdata")
-        reloc("com.jeff_media.morepersistentdatatypes","morepersistentdatatypes")
     }
 }
 
 bukkit {
     main = "com.kalimero2.team.claims.paper.PaperClaims"
-    apiVersion = "1.19"
+    apiVersion = "1.20"
     load = BukkitPluginDescription.PluginLoadOrder.STARTUP
     authors = listOf("byquanton")
     softDepend = listOf("floodgate")

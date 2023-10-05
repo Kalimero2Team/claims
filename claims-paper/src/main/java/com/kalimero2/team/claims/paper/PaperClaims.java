@@ -7,39 +7,38 @@ import com.kalimero2.team.claims.paper.command.CommandManager;
 import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
 import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
+import com.kalimero2.team.claims.paper.storage.Storage;
 import com.kalimero2.team.claims.paper.util.ChunkBorders;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
-import com.kalimero2.team.claims.paper.util.SerializableChunk;
 import org.bukkit.World;
-import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.UUID;
 
 public class PaperClaims extends JavaPlugin implements ClaimsApi {
-
     public static PaperClaims plugin;
-    public File playerDataFolder;
     public ChunkBorders chunkBorders;
     private MessageUtil messageUtil;
+    private Storage storage;
 
     @Override
     public void onLoad() {
         if (plugin == null) {
             plugin = this;
         }
+
         ClaimsApiHolder.setApi(this);
-        plugin.saveDefaultConfig();
 
-        this.messageUtil = new MessageUtil(new File(this.getDataFolder() + "/" + plugin.getConfig().getString("messages")));
-        this.playerDataFolder = new File(this.getDataFolder() + "/playerdata/");
+        saveDefaultConfig();
 
-        ConfigurationSerialization.registerClass(SerializableChunk.class);
+        this.messageUtil = new MessageUtil(new File(this.getDataFolder() + "/" + getConfig().getString("messages")));
     }
 
     @Override
     public void onEnable() {
+        storage = new Storage(this, new File(this.getDataFolder() + "/" + getConfig().getString("database")));
+
         getServer().getPluginManager().registerEvents(new ChunkProtectionListener(), this);
         getServer().getPluginManager().registerEvents(new ChunkLoadListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerMoveListener(), this);

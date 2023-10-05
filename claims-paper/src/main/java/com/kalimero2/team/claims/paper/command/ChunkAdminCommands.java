@@ -5,7 +5,6 @@ import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
-import com.kalimero2.team.claims.paper.util.ExtraPlayerData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -87,18 +86,6 @@ public class ChunkAdminCommands extends CommandHandler {
     private void listClaimsOther(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
             OfflinePlayer target = context.get("target");
-            ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(target);
-            player.sendMessage("Claims von (" + target.getName() + "): " + extraPlayerData.chunks.size());
-            extraPlayerData.chunks.forEach(serializableChunk -> {
-                TagResolver.Single chunk_x = Placeholder.unparsed("chunk_x", String.valueOf(serializableChunk.x()));
-                TagResolver.Single chunk_z = Placeholder.unparsed("chunk_z", String.valueOf(serializableChunk.z()));
-                Chunk obj = serializableChunk.toBukkitChunk();
-                Location location = obj.getBlock(0, 0, 0).getLocation();
-                TagResolver.Single x = Placeholder.unparsed("x", String.valueOf(location.getBlockX()));
-                TagResolver.Single z = Placeholder.unparsed("z", String.valueOf(location.getBlockZ()));
-                Component component = PaperClaims.plugin.getMessageUtil().getMessage("chunk.list", chunk_x, chunk_z, x, z).clickEvent(ClickEvent.runCommand("/tp " + location.getBlockX() + " " + location.getBlockY() + " " + location.getBlockZ()));
-                player.sendMessage(component);
-            });
         }
     }
 

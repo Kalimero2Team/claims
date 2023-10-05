@@ -4,13 +4,10 @@ import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
-import com.kalimero2.team.claims.paper.util.ExtraPlayerData;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
@@ -52,17 +49,7 @@ public class BaseChunkCommands extends CommandHandler {
 
     private void listClaims(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
-            ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(player);
-            player.sendMessage("Claims: " + extraPlayerData.chunks.size());
-            extraPlayerData.chunks.forEach(serializableChunk -> {
-                TagResolver.Single chunk_x = Placeholder.unparsed("chunk_x", String.valueOf(serializableChunk.x()));
-                TagResolver.Single chunk_z = Placeholder.unparsed("chunk_z", String.valueOf(serializableChunk.z()));
-                Chunk obj = serializableChunk.toBukkitChunk();
-                Location location = obj.getBlock(0, 0, 0).getLocation();
-                TagResolver.Single x = Placeholder.unparsed("x", String.valueOf(location.getBlockX()));
-                TagResolver.Single z = Placeholder.unparsed("z", String.valueOf(location.getBlockZ()));
-                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.list", chunk_x, chunk_z, x, z);
-            });
+
         }
     }
 
@@ -101,9 +88,8 @@ public class BaseChunkCommands extends CommandHandler {
                 if (ClaimManager.claimChunk(chunk, player)) {
                     PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_success");
                 } else {
-                    ExtraPlayerData extraPlayerData = ClaimManager.getExtraPlayerData(player);
-                    TagResolver.Single count = Placeholder.unparsed("count", String.valueOf(extraPlayerData.chunks.size()));
-                    TagResolver.Single max = Placeholder.unparsed("max_count", String.valueOf(extraPlayerData.maxclaims));
+                    TagResolver.Single count = Placeholder.unparsed("count", "0");
+                    TagResolver.Single max = Placeholder.unparsed("max_count", "0");
                     PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_too_many_claims", count, max);
                 }
 

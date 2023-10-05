@@ -1,4 +1,5 @@
 messages: "messages_en.yml"
+database: "claims.db"
 claims:
   max-claims: 16
   worlds: ["world"]

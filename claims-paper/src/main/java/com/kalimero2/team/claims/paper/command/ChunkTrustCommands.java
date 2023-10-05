@@ -3,16 +3,12 @@ package com.kalimero2.team.claims.paper.command;
 import cloud.commandframework.bukkit.parsers.OfflinePlayerArgument;
 import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.paper.PaperClaims;
-import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
-import com.kalimero2.team.claims.paper.util.SerializableChunk;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
-import java.util.HashSet;
 
 import static com.kalimero2.team.claims.paper.claim.ClaimManager.forcedPlayers;
 
@@ -35,18 +31,6 @@ public class ChunkTrustCommands extends CommandHandler {
                         .argument(OfflinePlayerArgument.of("target"))
                         .handler(this::trustRemove)
         );
-        /*commandManager.command(
-                commandManager.commandBuilder("chunk")
-                        .literal("addAll")
-                        .argument(OfflinePlayerArgument.of("target"))
-                        .handler(this::trustAddAll)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("chunk")
-                        .literal("removeAll")
-                        .argument(OfflinePlayerArgument.of("target"))
-                        .handler(this::trustRemoveAll)
-        );*/
     }
 
 
@@ -82,37 +66,5 @@ public class ChunkTrustCommands extends CommandHandler {
         }
     }
 
-
-    private void trustAddAll(CommandContext<CommandSender> context) {
-        if (context.getSender() instanceof Player player) {
-            Player target = context.get("target");
-            HashSet<SerializableChunk> chunks = ClaimManager.getExtraPlayerData(player).chunks;
-            chunks.forEach(chunk -> {
-                ClaimsChunk claimsChunk = ClaimsChunk.of(chunk.toBukkitChunk());
-                if (claimsChunk.hasOwner()) {
-                    if (claimsChunk.getOwner().equals(player.getUniqueId())) {
-                        claimsChunk.addTrusted(target.getUniqueId());
-                    }
-                }
-            });
-            PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.trustAddAll", Placeholder.unparsed("target", target.getName()));
-        }
-    }
-
-    private void trustRemoveAll(CommandContext<CommandSender> context) {
-        if (context.getSender() instanceof Player player) {
-            Player target = context.get("target");
-            HashSet<SerializableChunk> chunks = ClaimManager.getExtraPlayerData(player).chunks;
-            chunks.forEach(chunk -> {
-                ClaimsChunk claimsChunk = ClaimsChunk.of(chunk.toBukkitChunk());
-                if (claimsChunk.hasOwner()) {
-                    if (claimsChunk.getOwner().equals(player.getUniqueId())) {
-                        claimsChunk.removeTrusted(target.getUniqueId());
-                    }
-                }
-            });
-            PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.trustRemoveAll", Placeholder.unparsed("target", target.getName()));
-        }
-    }
 
 }
