@@ -4,5 +4,5 @@ public interface Flag {
 
     int getId();
 
-
+    boolean getState();
 }

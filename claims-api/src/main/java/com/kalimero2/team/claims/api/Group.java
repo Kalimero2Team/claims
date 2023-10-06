@@ -12,7 +12,4 @@ public interface Group {
 
     List<GroupMember> getMembers();
 
-    void addMember(GroupMember member);
-
-    void removeMember(GroupMember member);
 }

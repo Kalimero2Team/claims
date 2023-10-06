@@ -1,5 +1,6 @@
 package com.kalimero2.team.claims.paper;
 
+import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.ClaimsApiHolder;
 import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
@@ -16,7 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.util.UUID;
 
-public class PaperClaims extends JavaPlugin implements ClaimsApi {
+public class PaperClaims extends JavaPlugin {
     public static PaperClaims plugin;
     public ChunkBorders chunkBorders;
     private MessageUtil messageUtil;
@@ -28,7 +29,7 @@ public class PaperClaims extends JavaPlugin implements ClaimsApi {
             plugin = this;
         }
 
-        ClaimsApiHolder.setApi(this);
+        ClaimsApiHolder.setApi(null);
 
         saveDefaultConfig();
 
@@ -57,7 +58,6 @@ public class PaperClaims extends JavaPlugin implements ClaimsApi {
         return messageUtil;
     }
 
-    @Override
     public com.kalimero2.team.claims.api.ClaimsChunk getChunk(int x, int z, UUID worldUUID) {
         World world = getServer().getWorld(worldUUID);
         if (world == null) {
