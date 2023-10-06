@@ -1,9 +1,9 @@
 package com.kalimero2.team.claims.paper.command;
 
 import cloud.commandframework.context.CommandContext;
+import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.claim.ClaimManager;
-import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -53,7 +53,7 @@ public class BaseChunkCommands extends CommandHandler {
 
     private void unClaim(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
-            ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
+
             if (chunk.isClaimed()) {
                 if (chunk.hasOwner() && chunk.getOwner().equals(player.getUniqueId()) || forcedPlayers.contains(player.getUniqueId())) {
                     ClaimManager.unclaimChunk(chunk, player);

@@ -1,5 +1,6 @@
 package com.kalimero2.team.claims.paper;
 
+import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.ClaimsApiHolder;
 import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
@@ -12,17 +13,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 
 public class PaperClaims extends JavaPlugin {
-    public static PaperClaims plugin;
+    public static ClaimsApi api;
     public ChunkBorders chunkBorders;
     private MessageUtil messageUtil;
     private Storage storage;
 
     @Override
     public void onLoad() {
-        if (plugin == null) {
-            plugin = this;
-        }
-
         ClaimsApiHolder.setApi(null);
 
         saveDefaultConfig();

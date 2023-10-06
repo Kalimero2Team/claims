@@ -5,10 +5,12 @@ import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
 import org.bukkit.Chunk;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+
 
 public interface ClaimsApi {
 
@@ -31,20 +33,12 @@ public interface ClaimsApi {
     void unregisterFlag(Flag flag);
 
     /**
-     * Gets a {@link Flag} by its id
+     * Gets a {@link Flag} by its {@link NamespacedKey}
      *
-     * @param id the id of the flag
+     * @param key the NamespacedKey of the flag
      * @return the flag or null if not found
      */
-    Flag getFlag(int id);
-
-    /**
-     * Gets the flags of a claim
-     *
-     * @param claim the claim to get the flags from
-     * @return the flags of the claim
-     */
-    List<Flag> getFlags(Claim claim);
+    Flag getFlag(NamespacedKey key);
 
     /**
      * Gets the state of a flag in a claim
@@ -100,18 +94,30 @@ public interface ClaimsApi {
 
     /**
      * Sets the permission level of a member
+     *
      * @param member the member to set the permission level from
-     * @param level the permission level to set
+     * @param level  the permission level to set
      * @return true if successful, false otherwise
      * @see GroupMember#getPermissionLevel() to get the permission level
      */
     boolean setPermissionLevel(GroupMember member, PermissionLevel level);
 
     /**
-     * Gets the permission level of a member
-     * @param member the member to get the permission level from
-     * @return the permission level of the member
-     * @see Group
+     * Claims a chunk for a group
+     *
+     * @param chunk the chunk to claim
+     * @param group the group to claim the chunk for
+     * @return true if successful, false otherwise
      */
+    boolean claimChunk(Chunk chunk, Group group);
+
+    /**
+     * Unclaims a chunk
+     *
+     * @param chunk the chunk to unclaim
+     * @return true if successful, false otherwise
+     */
+    boolean unclaimChunk(Chunk chunk);
+
 
 }

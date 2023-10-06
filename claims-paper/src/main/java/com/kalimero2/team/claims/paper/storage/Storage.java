@@ -109,7 +109,7 @@ public class Storage {
 
         executeUpdate("CREATE TABLE IF NOT EXISTS CLAIM_FLAGS(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
-                "FLAG_KEY VARCHAR(256) NOT NULL," +
+                "FLAG_IDENTIFIER VARCHAR(256) NOT NULL," +
                 "STATE BOOLEAN NOT NULL" +
                 ");");
 
