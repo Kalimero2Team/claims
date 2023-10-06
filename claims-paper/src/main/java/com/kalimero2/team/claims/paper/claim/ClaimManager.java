@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 
-public class ClaimManager implements ClaimsApi {
+public abstract class ClaimManager implements ClaimsApi {
 
     
 

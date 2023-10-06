@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import static com.kalimero2.team.claims.paper.claim.ClaimManager.forcedPlayers;
-
 public class BaseChunkCommands extends CommandHandler {
     public BaseChunkCommands(CommandManager commandManager) {
         super(commandManager);

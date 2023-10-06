@@ -1,7 +1,6 @@
-package com.kalimero2.team.claims.api;
+package com.kalimero2.team.claims.api.group;
 
 public enum PermissionLevel {
-
     MEMBER(0),
     MODERATOR(1),
     ADMIN(9);

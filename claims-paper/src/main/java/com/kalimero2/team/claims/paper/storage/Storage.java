@@ -105,11 +105,11 @@ public class Storage {
 
 
         // CLAIM_FLAGS
-        // CHUNK_ID, FLAG_ID, STATE
+        // CHUNK_ID, FLAG_IDENTIFIER, STATE
 
         executeUpdate("CREATE TABLE IF NOT EXISTS CLAIM_FLAGS(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
-                "FLAG_ID TINYINT NOT NULL," +
+                "FLAG_KEY VARCHAR(256) NOT NULL," +
                 "STATE BOOLEAN NOT NULL" +
                 ");");
 
