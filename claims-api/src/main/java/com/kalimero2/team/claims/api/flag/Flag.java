@@ -8,14 +8,20 @@ public final class Flag {
 
     private final NamespacedKey key;
     private final boolean defaultState;
+    private final boolean adminOnly;
 
-    private Flag(NamespacedKey key, boolean defaultState) {
+    private Flag(NamespacedKey key, boolean defaultState, boolean adminOnly) {
         this.key = key;
         this.defaultState = defaultState;
+        this.adminOnly = adminOnly;
     }
 
     public static Flag of(NamespacedKey key, boolean defaultState) {
-        return new Flag(key, defaultState);
+        return new Flag(key, defaultState, false);
+    }
+
+    public static Flag of(NamespacedKey key, boolean defaultState, boolean adminOnly) {
+        return new Flag(key, defaultState, adminOnly);
     }
 
     public NamespacedKey getKey() {
@@ -24,6 +30,10 @@ public final class Flag {
 
     public boolean getDefaultState() {
         return defaultState;
+    }
+
+    public boolean isAdminOnly() {
+        return adminOnly;
     }
 
     @Override

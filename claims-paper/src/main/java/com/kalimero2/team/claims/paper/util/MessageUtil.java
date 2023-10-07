@@ -18,10 +18,10 @@ public class MessageUtil {
     private final FileConfiguration externalConfig;
     private final FileConfiguration internalConfig;
 
-    public MessageUtil(File messageConfig) {
+    public MessageUtil(PaperClaims plugin, File messageConfig) {
         externalConfig = YamlConfiguration.loadConfiguration(messageConfig);
 
-        InputStream inputStream = PaperClaims.plugin.getResource(messageConfig.getName());
+        InputStream inputStream = plugin.getResource(messageConfig.getName());
 
         assert inputStream != null;
         InputStreamReader inputStreamReader = new InputStreamReader(inputStream);

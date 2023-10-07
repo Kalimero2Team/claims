@@ -1,7 +1,6 @@
 package com.kalimero2.team.claims.paper.command;
 
 import cloud.commandframework.context.CommandContext;
-import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
@@ -57,19 +56,19 @@ public class BaseChunkCommands extends CommandHandler {
             if (chunk.isClaimed()) {
                 if (chunk.hasOwner() && chunk.getOwner().equals(player.getUniqueId()) || forcedPlayers.contains(player.getUniqueId())) {
                     ClaimManager.unclaimChunk(chunk, player);
-                    PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_success");
+                    plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_success");
                 } else if (!chunk.hasOwner() && player.hasPermission("claims.admin.teamClaim")) {
                     chunk.setClaimed(false);
                     chunk.setProperties(new HashMap<>());
                     chunk.setTrusted(null);
                     chunk.clearIgnoredInteractables();
 
-                    PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.team_unclaim_success");
+                    plugin.getMessageUtil().sendMessage(player, "chunk.team_unclaim_success");
                 } else {
-                    PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_fail_not_owner");
+                    plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_fail_not_owner");
                 }
             } else {
-                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_fail_not_claimed");
+                plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_fail_not_claimed");
             }
 
         }

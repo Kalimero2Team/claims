@@ -46,6 +46,7 @@ public class ClaimManager implements ClaimsApi {
         if (!registeredFlags.containsValue(flag)) {
             throw new IllegalArgumentException("Flag is not registered");
         }
+        // TODO: implement
         return flag.getDefaultState();
     }
 
@@ -58,6 +59,12 @@ public class ClaimManager implements ClaimsApi {
     public @Nullable Claim getClaim(Chunk chunk) {
         if (claimCache.containsKey(chunk)) {
             return claimCache.get(chunk);
+        }else {
+            Claim claimData = storage.getClaimData(chunk);
+            if (claimData != null) {
+                claimCache.put(chunk, claimData);
+                return claimData;
+            }
         }
         return null;
     }
@@ -73,7 +80,27 @@ public class ClaimManager implements ClaimsApi {
     }
 
     @Override
+    public void setMaxClaims(Group group, int max) {
+
+    }
+
+    @Override
     public boolean setPermissionLevel(GroupMember member, PermissionLevel level) {
+        return false;
+    }
+
+    @Override
+    public @Nullable GroupMember addGroupMember(Group group, Player player, PermissionLevel level) {
+        return null;
+    }
+
+    @Override
+    public @Nullable GroupMember getGroupMember(Group group, Player player) {
+        return null;
+    }
+
+    @Override
+    public boolean removeGroupMember(Group group, GroupMember member) {
         return false;
     }
 
@@ -84,6 +111,16 @@ public class ClaimManager implements ClaimsApi {
 
     @Override
     public boolean unclaimChunk(Chunk chunk) {
+        return false;
+    }
+
+    @Override
+    public boolean addGroupToClaim(Claim claim, Group group) {
+        return false;
+    }
+
+    @Override
+    public boolean removeGroupFromClaim(Claim claim, Group group) {
         return false;
     }
 }

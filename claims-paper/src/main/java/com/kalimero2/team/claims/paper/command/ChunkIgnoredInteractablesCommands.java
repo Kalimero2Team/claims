@@ -3,15 +3,12 @@ package com.kalimero2.team.claims.paper.command;
 import cloud.commandframework.bukkit.parsers.MaterialArgument;
 import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.paper.PaperClaims;
-import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
-
-import static com.kalimero2.team.claims.paper.claim.ClaimManager.forcedPlayers;
 
 public class ChunkIgnoredInteractablesCommands extends CommandHandler {
     public ChunkIgnoredInteractablesCommands(CommandManager commandManager) {

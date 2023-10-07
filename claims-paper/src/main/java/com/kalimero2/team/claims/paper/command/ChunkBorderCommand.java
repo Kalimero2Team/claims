@@ -28,10 +28,10 @@ public class ChunkBorderCommand extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             if (ChunkBorders.show_border.contains(player)) {
                 ChunkBorders.show_border.remove(player);
-                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.border_off");
+                plugin.getMessageUtil().sendMessage(player, "chunk.border_off");
             } else {
                 ChunkBorders.show_border.add(player);
-                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.border_on");
+                plugin.getMessageUtil().sendMessage(player, "chunk.border_on");
             }
         }
     }

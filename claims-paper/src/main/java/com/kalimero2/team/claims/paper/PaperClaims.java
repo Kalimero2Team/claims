@@ -2,6 +2,7 @@ package com.kalimero2.team.claims.paper;
 
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.ClaimsApiHolder;
+import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
 import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
@@ -13,23 +14,23 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 
 public class PaperClaims extends JavaPlugin {
-    public static ClaimsApi api;
+    public static ClaimManager api;
     public ChunkBorders chunkBorders;
     private MessageUtil messageUtil;
     private Storage storage;
 
     @Override
     public void onLoad() {
-        ClaimsApiHolder.setApi(null);
-
         saveDefaultConfig();
 
-        this.messageUtil = new MessageUtil(new File(this.getDataFolder() + "/" + getConfig().getString("messages")));
+        this.messageUtil = new MessageUtil(this, new File(this.getDataFolder() + "/" + getConfig().getString("messages")));
     }
 
     @Override
     public void onEnable() {
         storage = new Storage(this, new File(this.getDataFolder() + "/" + getConfig().getString("database")));
+        api = new ClaimManager(storage);
+        ClaimsApiHolder.setApi(api);
 
         getServer().getPluginManager().registerEvents(new ChunkProtectionListener(), this);
         getServer().getPluginManager().registerEvents(new ChunkLoadListener(), this);

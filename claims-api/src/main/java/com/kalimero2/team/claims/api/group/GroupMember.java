@@ -1,13 +1,13 @@
 package com.kalimero2.team.claims.api.group;
 
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 public interface GroupMember {
     /**
      * The player of the member
      * @return the player of the member
      */
-    Player getPlayer();
+    OfflinePlayer getPlayer();
 
     /**
      * Permission level of the member in the group

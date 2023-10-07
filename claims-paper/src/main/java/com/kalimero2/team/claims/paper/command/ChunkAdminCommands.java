@@ -3,19 +3,12 @@ package com.kalimero2.team.claims.paper.command;
 import cloud.commandframework.bukkit.parsers.OfflinePlayerArgument;
 import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.paper.PaperClaims;
-import com.kalimero2.team.claims.paper.claim.ClaimManager;
-import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import static com.kalimero2.team.claims.paper.claim.ClaimManager.forcedPlayers;
 
 public class ChunkAdminCommands extends CommandHandler {
     public ChunkAdminCommands(CommandManager commandManager) {

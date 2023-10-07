@@ -7,6 +7,10 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 
 public class ChunkLoadListener implements Listener {
 
+    public ChunkLoadListener() {
+
+    }
+
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
 

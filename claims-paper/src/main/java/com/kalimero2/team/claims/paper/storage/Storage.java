@@ -1,8 +1,22 @@
 package com.kalimero2.team.claims.paper.storage;
 
-
+import com.kalimero2.team.claims.api.Claim;
+import com.kalimero2.team.claims.api.ClaimsApi;
+import com.kalimero2.team.claims.api.flag.Flag;
+import com.kalimero2.team.claims.api.group.Group;
+import com.kalimero2.team.claims.api.group.GroupMember;
+import com.kalimero2.team.claims.api.group.PermissionLevel;
+import com.kalimero2.team.claims.api.interactable.BlockInteractable;
+import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import com.kalimero2.team.claims.paper.PaperClaims;
+import org.bukkit.Chunk;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.EntityType;
 import org.intellij.lang.annotations.Language;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.sql.Connection;
@@ -10,6 +24,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 public class Storage {
 
@@ -134,5 +152,167 @@ public class Storage {
                 ");");
 
     }
+
+    public Claim getClaimData(@NotNull Chunk chunk) {
+        try {
+            int chunkX = chunk.getX();
+            int chunkZ = chunk.getZ();
+            UUID world = chunk.getWorld().getUID();
+
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIMS WHERE CHUNK_X = ? AND CHUNK_Z = ? AND WORLD = ?", chunkX, chunkZ, world);
+
+            int claim_id = resultSet.getInt("ID");
+            StoredClaim claim = new StoredClaim(
+                    getGroup(resultSet.getInt("OWNER")),
+                    chunk,
+                    getMembers(claim_id),
+                    getBlockInteractables(claim_id),
+                    getEntityInteractables(claim_id),
+                    getFlags(claim_id),
+                    resultSet.getTimestamp("CLAIMED_SINCE").toLocalDateTime(),
+                    resultSet.getTimestamp("LAST_INTERACTION").toLocalDateTime(),
+                    resultSet.getTimestamp("LAST_ONLINE").toLocalDateTime()
+            );
+
+            resultSet.close();
+
+            return claim;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    private @Nullable HashMap<Flag, Boolean> getFlags(int claimId) {
+        try{
+            HashMap<Flag, Boolean> flags = new HashMap<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claimId);
+            while (resultSet.next()) {
+                String flagIdentifier = resultSet.getString("FLAG_IDENTIFIER");
+                boolean state = resultSet.getBoolean("STATE");
+                Flag flag = ClaimsApi.getApi().getFlag(NamespacedKey.fromString(flagIdentifier));
+                flags.put(flag, state);
+            }
+            resultSet.close();
+
+            return flags;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    private @Nullable List<EntityInteractable> getEntityInteractables(int id) {
+        try {
+            List<EntityInteractable> interactables = new ArrayList<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", id);
+            while (resultSet.next()) {
+                String entityIdentifier = resultSet.getString("ENTITY_IDENTIFIER");
+                boolean interact = resultSet.getBoolean("INTERACT");
+                boolean damage = resultSet.getBoolean("DAMAGE");
+                interactables.add(new StoredEntityInteractable(EntityType.valueOf(entityIdentifier), interact, damage));
+            }
+            resultSet.close();
+
+            return interactables;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    private @Nullable List<BlockInteractable> getBlockInteractables(int id) {
+        try {
+            List<BlockInteractable> interactables = new ArrayList<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", id);
+            while (resultSet.next()) {
+                String blockIdentifier = resultSet.getString("BLOCK_IDENTIFIER");
+                boolean state = resultSet.getBoolean("STATE");
+                interactables.add(new StoredBlockInteractable(Material.valueOf(blockIdentifier), state));
+            }
+            resultSet.close();
+
+            return interactables;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+
+    public StoredGroup getGroup(int id) {
+        try {
+            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE ID = ?", id);
+            if (resultSet.next()) {
+                int maxClaims = resultSet.getInt("MAX_CLAIMS");
+                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
+                List<GroupMember> members = getGroupMembers(id);
+                resultSet.close();
+
+                return new StoredGroup(id, maxClaims, isPlayer, members);
+            }
+            resultSet.close();
+
+            return null;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public List<GroupMember> getGroupMembers(int group_id) {
+        try {
+            List<GroupMember> groupMembers = new ArrayList<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM GROUP_MEMBERS WHERE GROUP_ID = ?", group_id);
+            while (resultSet.next()) {
+                String player = resultSet.getString("PLAYER");
+                OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(UUID.fromString(player));
+                PermissionLevel level = PermissionLevel.fromLevel(resultSet.getInt("PERMISSION_LEVEL"));
+                groupMembers.add(new StoredGroupMember(offlinePlayer, level));
+            }
+            resultSet.close();
+
+            return groupMembers;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public Group getPlayerGroup(@NotNull OfflinePlayer player) {
+        try {
+            ResultSet resultSet = executeQuery("SELECT G.ID, G.NAME, G.MAX_CLAIMS, G.IS_PLAYER FROM GROUPS G INNER JOIN GROUP_MEMBERS GM ON G.ID = GM.GROUP_ID WHERE G.IS_PLAYER = TRUE AND GM.PLAYER = ?", player.getUniqueId().toString());
+
+            if (resultSet.next()) {
+                int id = resultSet.getInt("ID");
+                int maxClaims = resultSet.getInt("MAX_CLAIMS");
+                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
+                List<GroupMember> members = getGroupMembers(id);
+                resultSet.close();
+
+                return new StoredGroup(id, maxClaims, isPlayer, members);
+            }
+
+            resultSet.close();
+
+            return null;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public List<Group> getMembers(int claim_id) {
+        try {
+            List<Group> members = new ArrayList<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim_id);
+            while (resultSet.next()) {
+                int group_id = resultSet.getInt("GROUP_ID");
+                members.add(getGroup(group_id));
+            }
+            resultSet.close();
+
+            return members;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+
+
+
 
 }
