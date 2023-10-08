@@ -16,7 +16,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         env:
           REPO_USERNAME: ${{ secrets.KALIMERO2_REPO_USERNAME }}
-          REPO_PASSWORD: ${{ secrets.KALIMERO2_REPO_PASSWORD }}
+          REPO_PASSWORD: ${{ secrets.KALIMERO2_REPO_SECRET }}
         with:
           arguments: publish
       - name: Upload Artifacts
