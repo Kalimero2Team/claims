@@ -106,6 +106,21 @@ public interface ClaimsApi {
     List<Group> getGroups(OfflinePlayer player);
 
     /**
+     * Get a group by its id
+     *
+     * @param id the id of the group
+     * @return the group or null if not found
+     */
+    @Nullable Group getGroup(int id);
+
+    /**
+     * Get all groups
+     *
+     * @return all groups
+     */
+    List<Group> getGroups();
+
+    /**
      * Gets the "player" group of a player
      *
      * @param player the player to get the group from
@@ -125,12 +140,13 @@ public interface ClaimsApi {
     /**
      * Sets the permission level of a member
      *
-     * @param member the member to set the permission level from
+     * @param group the group to set the permission level
+     * @param member the member to set the permission level
      * @param level  the permission level to set
      * @return true if successful, false otherwise
      * @see GroupMember#getPermissionLevel() to get the permission level
      */
-    boolean setPermissionLevel(GroupMember member, PermissionLevel level);
+    boolean setPermissionLevel(Group group, GroupMember member, PermissionLevel level);
 
     /**
      * Adds a player to a group

@@ -10,6 +10,7 @@ import org.bukkit.Chunk;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class StoredClaim implements Claim {
     private final int id;
@@ -87,5 +88,18 @@ public class StoredClaim implements Claim {
     @Override
     public LocalDateTime getLastOnline() {
         return lastOnline;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StoredClaim that = (StoredClaim) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

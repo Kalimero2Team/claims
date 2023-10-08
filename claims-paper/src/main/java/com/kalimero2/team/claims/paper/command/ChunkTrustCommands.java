@@ -41,13 +41,11 @@ public class ChunkTrustCommands extends CommandHandler {
                 if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
                     Group target = context.get("target");
                     if (claim.getMembers().contains(target)) {
-                        // TODO: Add Group name
-                        plugin.getMessageUtil().sendMessage(player, "chunk.claim_add_fail_already_added", Placeholder.unparsed("target", target.toString()));
+                        plugin.getMessageUtil().sendMessage(player, "chunk.claim_add_fail_already_added", Placeholder.unparsed("target", target.getName()));
                         return;
                     }
                     api.addGroupToClaim(claim, target);
-                    // TODO: Add Group name
-                    plugin.getMessageUtil().sendMessage(player, "chunk.claim_add_success", Placeholder.unparsed("target", target.toString()));
+                    plugin.getMessageUtil().sendMessage(player, "chunk.claim_add_success", Placeholder.unparsed("target", target.getName()));
                 } else {
                     plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");
                 }
@@ -66,13 +64,11 @@ public class ChunkTrustCommands extends CommandHandler {
                 if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
                     Group target = context.get("target");
                     if (!claim.getMembers().contains(target)) {
-                        // TODO: Add Group name
-                        plugin.getMessageUtil().sendMessage(player, "chunk.claim_remove_fail_already_removed", Placeholder.unparsed("target", target.toString()));
+                        plugin.getMessageUtil().sendMessage(player, "chunk.claim_remove_fail_already_removed", Placeholder.unparsed("target", target.getName()));
                         return;
                     }
                     api.removeGroupFromClaim(claim, target);
-                    // TODO: Add Group name
-                    plugin.getMessageUtil().sendMessage(player, "chunk.claim_remove_success", Placeholder.unparsed("target", target.toString()));
+                    plugin.getMessageUtil().sendMessage(player, "chunk.claim_remove_success", Placeholder.unparsed("target", target.getName()));
                 } else {
                     plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");
                 }

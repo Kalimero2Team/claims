@@ -21,6 +21,7 @@ public class ChunkAdminCommands extends CommandHandler {
     public void register() {
         commandManager.command(
                 commandManager.commandBuilder("chunk")
+                        .literal("admin")
                         .literal("listother")
                         .permission("claims.admin.listother")
                         .argument(GroupArgument.of("target"))
@@ -29,6 +30,7 @@ public class ChunkAdminCommands extends CommandHandler {
         );
         commandManager.command(
                 commandManager.commandBuilder("chunk")
+                        .literal("admin")
                         .literal("setowner")
                         .permission("claims.admin.setOwner")
                         .argument(GroupArgument.of("target"))
@@ -37,6 +39,7 @@ public class ChunkAdminCommands extends CommandHandler {
 
         commandManager.command(
                 commandManager.commandBuilder("chunk")
+                        .literal("admin")
                         .literal("limit")
                         .literal("set")
                         .permission("claims.admin.limit.set")
@@ -46,6 +49,7 @@ public class ChunkAdminCommands extends CommandHandler {
         );
         commandManager.command(
                 commandManager.commandBuilder("chunk")
+                        .literal("admin")
                         .literal("limit")
                         .literal("get")
                         .permission("claims.admin.limit.get")
@@ -54,6 +58,7 @@ public class ChunkAdminCommands extends CommandHandler {
         );
         commandManager.command(
                 commandManager.commandBuilder("chunk")
+                        .literal("admin")
                         .literal("limit")
                         .literal("add")
                         .permission("claims.admin.limit.get")
@@ -94,9 +99,8 @@ public class ChunkAdminCommands extends CommandHandler {
         int maxClaims = target.getMaxClaims();
         api.setMaxClaims(target, maxClaims + limit);
 
-        // TODO: Add Group name
         // TODO: Add Old Limit
-        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.add_claims", Placeholder.unparsed("count", String.valueOf(limit)), Placeholder.unparsed("target", target.toString()));
+        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.add_claims", Placeholder.unparsed("count", String.valueOf(limit)), Placeholder.unparsed("target", target.getName()));
     }
 
     private void getLimit(CommandContext<CommandSender> context) {
@@ -104,8 +108,7 @@ public class ChunkAdminCommands extends CommandHandler {
 
         int maxClaims = target.getMaxClaims();
 
-        // TODO: Add Group name
-        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.get_claims", Placeholder.unparsed("count", String.valueOf(maxClaims)), Placeholder.unparsed("target", target.toString()));
+        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.get_claims", Placeholder.unparsed("count", String.valueOf(maxClaims)), Placeholder.unparsed("target", target.getName()));
     }
 
     private void setLimit(CommandContext<CommandSender> context) {
@@ -114,8 +117,7 @@ public class ChunkAdminCommands extends CommandHandler {
 
         api.setMaxClaims(target, limit);
 
-        // TODO: Add Group name
         // TODO: Add Old Limit
-        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.set_claims", Placeholder.unparsed("count", String.valueOf(limit)), Placeholder.unparsed("target", target.toString()));
+        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.set_claims", Placeholder.unparsed("count", String.valueOf(limit)), Placeholder.unparsed("target", target.getName()));
     }
 }

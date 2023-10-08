@@ -14,7 +14,6 @@ import com.kalimero2.team.claims.api.group.Group;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,13 +99,12 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
 
             Group group = null;
             try {
-                //
-                group = null;
+                group = api.getGroup(Integer.parseInt(input));
             } catch (NumberFormatException ignored) {
             }
 
             if (group == null) {
-                // TODO: Alternative way to get group
+                group = api.getGroups().stream().filter(g -> g.getName().equalsIgnoreCase(input)).findFirst().orElse(null);
             }
 
             if (group == null) {
@@ -125,14 +123,8 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
         ) {
             List<String> output = new ArrayList<>();
 
-            if (commandContext.getSender() instanceof Player player) {
-                for (Group group : api.getGroups(player)) {
-                    output.add(String.valueOf(group.getId()));
-                }
-            } else {
-                for (Group group : api.getGroups(null)) {
-                    output.add(String.valueOf(group.getId()));
-                }
+            for (Group group : api.getGroups()) {
+                output.add(group.getName());
             }
 
             return output;
@@ -159,7 +151,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
             super(
                     GroupArgument.GroupParser.class,
                     context,
-                    Caption.of("argument.parse.failure.waystone"),
+                    Caption.of("argument.parse.failure.group"),
                     CaptionVariable.of("input", input)
             );
             this.input = input;

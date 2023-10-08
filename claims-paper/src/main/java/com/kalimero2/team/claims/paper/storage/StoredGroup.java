@@ -4,6 +4,7 @@ import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 
 import java.util.List;
+import java.util.Objects;
 
 public class StoredGroup implements Group {
 
@@ -44,5 +45,18 @@ public class StoredGroup implements Group {
     @Override
     public List<GroupMember> getMembers() {
         return members;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StoredGroup that = (StoredGroup) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

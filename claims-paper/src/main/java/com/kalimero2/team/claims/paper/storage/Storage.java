@@ -13,6 +13,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
@@ -56,12 +57,12 @@ public class Storage {
         return statement.executeQuery();
     }
 
-    private void executeUpdate(@Language(value = "SQL") String sql, Object... args) throws SQLException {
+    private int executeUpdate(@Language(value = "SQL") String sql, Object... args) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(sql);
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
-        statement.executeUpdate();
+        return statement.executeUpdate();
     }
 
 
@@ -76,7 +77,7 @@ public class Storage {
 
         executeUpdate("CREATE TABLE IF NOT EXISTS GROUPS(" +
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "NAME VARCHAR(64) NULL," +
+                "NAME VARCHAR(64) UNIQUE NULL," +
                 "MAX_CLAIMS INTEGER NOT NULL," +
                 "IS_PLAYER BOOLEAN NOT NULL" +
                 ");");
@@ -88,7 +89,8 @@ public class Storage {
         executeUpdate("CREATE TABLE IF NOT EXISTS GROUP_MEMBERS(" +
                 "GROUP_ID INTEGER NOT NULL REFERENCES GROUPS(ID)," +
                 "PLAYER VARCHAR(36) NOT NULL," +
-                "PERMISSION_LEVEL TINYINT NOT NULL" +
+                "PERMISSION_LEVEL TINYINT NOT NULL," +
+                "UNIQUE (GROUP_ID, PLAYER)" +
                 ");");
 
 
@@ -108,7 +110,8 @@ public class Storage {
                 "CLAIMED_SINCE DATETIME NOT NULL, " +
                 "LAST_INTERACTION DATETIME NOT NULL," +
                 "LAST_ONLINE DATETIME NOT NULL," +
-                "EXPIRE_TIME SMALLINT NOT NULL" +
+                "EXPIRE_TIME SMALLINT NOT NULL," +
+                "UNIQUE (CHUNK_X, CHUNK_Z, WORLD)" +
                 ");");
 
 
@@ -117,7 +120,8 @@ public class Storage {
 
         executeUpdate("CREATE TABLE IF NOT EXISTS CLAIM_MEMBERS(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
-                "GROUP_ID INTEGER NOT NULL REFERENCES GROUPS(ID)" +
+                "GROUP_ID INTEGER NOT NULL REFERENCES GROUPS(ID)," +
+                "UNIQUE (CLAIM_ID, GROUP_ID)"+
                 ");");
 
 
@@ -127,7 +131,8 @@ public class Storage {
         executeUpdate("CREATE TABLE IF NOT EXISTS CLAIM_FLAGS(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
                 "FLAG_IDENTIFIER VARCHAR(256) NOT NULL," +
-                "STATE BOOLEAN NOT NULL" +
+                "STATE BOOLEAN NOT NULL," +
+                "UNIQUE (CLAIM_ID, FLAG_IDENTIFIER)"+
                 ");");
 
 
@@ -137,7 +142,8 @@ public class Storage {
         executeUpdate("CREATE TABLE IF NOT EXISTS BLOCK_INTERACTABLES(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
                 "BLOCK_IDENTIFIER VARCHAR(64) NOT NULL," +
-                "STATE BOOLEAN NOT NULL" +
+                "STATE BOOLEAN NOT NULL," +
+                "UNIQUE (CLAIM_ID, BLOCK_IDENTIFIER)"+
                 ");");
 
         // ENTITY_INTERACTABLES
@@ -147,7 +153,8 @@ public class Storage {
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
                 "ENTITY_IDENTIFIER VARCHAR(64) NOT NULL," +
                 "INTERACT BOOLEAN NOT NULL," +
-                "DAMAGE BOOLEAN NOT NULL" +
+                "DAMAGE BOOLEAN NOT NULL," +
+                "UNIQUE (CLAIM_ID, ENTITY_IDENTIFIER)"+
                 ");");
 
     }
@@ -300,8 +307,41 @@ public class Storage {
         try {
             List<Group> groups = new ArrayList<>();
 
-            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE IS_PLAYER = TRUE");
+            ResultSet resultSet = executeQuery("SELECT G.ID, G.NAME, G.MAX_CLAIMS, G.IS_PLAYER FROM GROUPS G INNER JOIN GROUP_MEMBERS GM ON G.ID = GM.GROUP_ID WHERE GM.PLAYER = ?", player.getUniqueId().toString());
+
+            while (resultSet.next()){
+                int id = resultSet.getInt("ID");
+                String name = resultSet.getString("NAME");
+                int maxClaims = resultSet.getInt("MAX_CLAIMS");
+                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
+                List<GroupMember> members = getGroupMembers(id);
+                groups.add(new StoredGroup(id, name, maxClaims, isPlayer, members));
+            }
+            resultSet.close();
+
+            return groups;
+        } catch (SQLException ignored) {
             return null;
+        }
+    }
+
+    public List<Group> getGroups() {
+        try {
+            List<Group> groups = new ArrayList<>();
+
+            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS");
+
+            while (resultSet.next()){
+                int id = resultSet.getInt("ID");
+                String name = resultSet.getString("NAME");
+                int maxClaims = resultSet.getInt("MAX_CLAIMS");
+                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
+                List<GroupMember> members = getGroupMembers(id);
+                groups.add(new StoredGroup(id, name, maxClaims, isPlayer, members));
+            }
+            resultSet.close();
+
+            return groups;
         } catch (SQLException ignored) {
             return null;
         }
@@ -332,9 +372,21 @@ public class Storage {
         }
     }
 
+    public boolean createPlayerGroup(OfflinePlayer player, int maxClaims){
+        try {
+            executeUpdate("INSERT INTO GROUPS (NAME, MAX_CLAIMS, IS_PLAYER) VALUES (?, ?, ?)", player.getName(), maxClaims, true);
+            executeUpdate("INSERT INTO GROUP_MEMBERS (GROUP_ID, PLAYER, PERMISSION_LEVEL) VALUES ((SELECT ID FROM GROUPS WHERE NAME = ? AND IS_PLAYER = TRUE), ?, ?)", player.getName(), player.getUniqueId().toString(), PermissionLevel.OWNER.getLevel());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
     public boolean deleteGroup(Group group) {
         try {
             executeUpdate("DELETE FROM GROUPS WHERE ID = ?", group.getId());
+            executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ?", group.getId());
+            // TODO: delete claim related data when deleting a group
             return true;
         } catch (SQLException ignored) {
             return false;
@@ -377,7 +429,7 @@ public class Storage {
         }
     }
 
-    public boolean unclaimClaim(Claim claim) {
+    public boolean unclaimChunk(Claim claim) {
         try {
 
             executeUpdate("DELETE FROM CLAIMS WHERE ID = ?", claim.getId());
@@ -411,6 +463,88 @@ public class Storage {
 
             executeUpdate("INSERT INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", getClaimData(chunk).getId(), group.getId());
 
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
+    public GroupMember getGroupMember(Group group, OfflinePlayer player) {
+        try {
+            ResultSet resultSet = executeQuery("SELECT * FROM GROUP_MEMBERS WHERE GROUP_ID = ? AND PLAYER = ?", group.getId(), player.getUniqueId().toString());
+            if (resultSet.next()) {
+                PermissionLevel level = PermissionLevel.fromLevel(resultSet.getInt("PERMISSION_LEVEL"));
+                resultSet.close();
+                return new StoredGroupMember(player, level);
+            }
+            resultSet.close();
+
+            return null;
+        } catch (SQLException ignored) {
+            return null;
+        }
+
+    }
+
+    public List<Claim> getClaims(Group group) {
+        try {
+            List<Claim> claims = new ArrayList<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIMS WHERE OWNER = ?", group.getId());
+            while (resultSet.next()) {
+                int claim_id = resultSet.getInt("ID");
+                String world_id = resultSet.getString("WORLD");
+                World world = plugin.getServer().getWorld(UUID.fromString(world_id));
+                if(world == null){
+                    plugin.getLogger().warning("World ("+world_id+") not found for claim " + claim_id + " in group " + group.getId());
+                    continue;
+                }
+                Chunk chunk = world.getChunkAt(resultSet.getInt("CHUNK_X"), resultSet.getInt("CHUNK_Z"));
+                claims.add(getClaimData(chunk));
+            }
+            resultSet.close();
+
+            return claims;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public void setFlagState(Claim claim, Flag flag, boolean state) {
+        try {
+            executeUpdate("UPDATE CLAIM_FLAGS SET STATE = ? WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", state, claim.getId(), flag.getKey().toString());
+        } catch (SQLException ignored) {
+
+        }
+    }
+
+    public boolean getFlagState(Claim claim, Flag flag) {
+        try {
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", claim.getId(), flag.getKey().toString());
+            if (resultSet.next()) {
+                boolean state = resultSet.getBoolean("STATE");
+                resultSet.close();
+                return state;
+            }
+            resultSet.close();
+
+            return flag.getDefaultState();
+        } catch (SQLException ignored) {
+            return flag.getDefaultState();
+        }
+    }
+
+    public boolean addGroupToClaim(Claim claim, Group group) {
+        try {
+            executeUpdate("INSERT INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), group.getId());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
+    public boolean removeGroupFromClaim(Claim claim, Group group) {
+        try {
+            executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ? AND GROUP_ID = ?", claim.getId(), group.getId());
             return true;
         } catch (SQLException ignored) {
             return false;

@@ -16,10 +16,13 @@ public class PlayerMoveListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
 
-        Claim claim = ClaimsApi.getApi().getClaim(player.getChunk());
+        if(event.getFrom().getChunk().equals(event.getTo().getChunk())) {
+            return;
+        }
+
+        Claim claim = ClaimsApi.getApi().getClaim(event.getTo().getChunk());
         if (claim != null) {
-            // TODO: Add Group name
-            String name = claim.getOwner().toString();
+            String name = claim.getOwner().getName();
             // TODO: Put the message into messages.yml
             TextComponent msg = Component.text().content("Grundstücksbesitzer: ").color(NamedTextColor.WHITE).append(Component.text(name).color(NamedTextColor.GRAY)).build();
             event.getPlayer().sendActionBar(msg);

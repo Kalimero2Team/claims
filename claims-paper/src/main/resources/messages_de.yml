@@ -1,11 +1,12 @@
 chunk:
   info: '<bold>Informationen zu diesem Chunk</bold> [X: <chunk_x> | Z: <chunk_z>]:'
-  team_chunk: 'Besitzer: <bold><red>Team</red></bold>'
   claimed_true: 'Beansprucht: <bold><green>Ja</green></bold>'
   claimed_false: 'Beansprucht: <bold><red>Nein</red></bold>'
   claim_owner: 'Besitzer: <bold><player></bold>'
-  claim_trusted_start: 'Hinzugefügte Spieler:'
+  claim_trusted_player_header: 'Hinzugefügte Spieler:'
   claim_trusted_player: ' <bold><player></bold>'
+  claim_trusted_group_header: 'Hinzugefügte Gruppen:'
+  claim_trusted_group: ' <bold><group></bold>'
   claim_add_success: '<green><bold><target></bold> kann nun auf diesem Chunk bauen.</green>'
   claim_add_fail_already_added: '<red><bold><target></bold> konnte bereits auf diesem Chunk bauen.</red>'
   claim_add_fail_not_claimed: '<red><bold><target></bold> konnte nicht hinzugefügt werden, da dieser Chunk keinen Besitzer hat.</red>'
@@ -27,8 +28,10 @@ chunk:
   force_on: 'Force-Modus: <green>aktiviert</green>'
   force_off: 'Force-Modus: <red>deaktiviert</red>'
   set_owner: "Der Besitzer ist jetzt <bold><target></bold>"
-  list: "<x> <z> (Chunk <chunk_x> <chunk_z>)"
-  team_unclaim_success: "<green>Teamchunk wurde erfolgrein unclaimed</green> "
+  limit: "Du hast aktuell <bold><count></bold> von <bold><max_count></bold> Chunks geclaimed."
+  list_start: "<bold>Deine Claims:</bold>"
+  list_start_other: "<bold>Claims von <target>:</bold>"
+  list_entry: "<x> <z> (Chunk <chunk_x> <chunk_z>)"
   add_claims: "<green><target> hat jetzt <count> Chunks</green>"
   set_claims: "<green>Es wurden <bold><count></bold> Claims für <target> gesetzt</green>"
   get_claims: "<green><target> hat <bold><count></bold> Claims</green>"
@@ -44,3 +47,4 @@ chunk:
   ignored_interactables: "Die folgenden Blöcke sind nicht geschützt: <materials>"
   generic_fail_chunk_not_claimed: "<red>Dieser Chunk ist nicht geclaimed</red>"
   generic_fail_no_permission: "<red>Du hast keine Berechtigung für diese Aktion</red>"
+  paginated_list_footer: "<bold>Seite <page> von <max_page> <prev><next></bold>"
