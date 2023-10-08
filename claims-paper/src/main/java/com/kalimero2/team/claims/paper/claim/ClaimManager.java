@@ -6,23 +6,31 @@ import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
+import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.storage.Storage;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 
-public class ClaimManager implements ClaimsApi {
+public class ClaimManager implements ClaimsApi, Listener {
 
     private final Storage storage;
     private final HashMap<NamespacedKey, Flag> registeredFlags = new HashMap<>();
     private final HashMap<Chunk, Claim> claimCache = new HashMap<>();
 
-    public ClaimManager(Storage storage) {
+    public ClaimManager(PaperClaims plugin, Storage storage) {
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
         this.storage = storage;
     }
 
@@ -59,7 +67,7 @@ public class ClaimManager implements ClaimsApi {
     public @Nullable Claim getClaim(Chunk chunk) {
         if (claimCache.containsKey(chunk)) {
             return claimCache.get(chunk);
-        }else {
+        } else {
             Claim claimData = storage.getClaimData(chunk);
             if (claimData != null) {
                 claimCache.put(chunk, claimData);
@@ -70,12 +78,17 @@ public class ClaimManager implements ClaimsApi {
     }
 
     @Override
-    public List<Group> getGroups(Player player) {
+    public List<Claim> getClaims(Group group) {
+        return new ArrayList<>();
+    }
+
+    @Override
+    public List<Group> getGroups(OfflinePlayer player) {
         return null;
     }
 
     @Override
-    public Group getPlayerGroup(Player player) {
+    public Group getPlayerGroup(OfflinePlayer player) {
         return null;
     }
 
@@ -90,12 +103,12 @@ public class ClaimManager implements ClaimsApi {
     }
 
     @Override
-    public @Nullable GroupMember addGroupMember(Group group, Player player, PermissionLevel level) {
+    public @Nullable GroupMember addGroupMember(Group group, OfflinePlayer player, PermissionLevel level) {
         return null;
     }
 
     @Override
-    public @Nullable GroupMember getGroupMember(Group group, Player player) {
+    public @Nullable GroupMember getGroupMember(Group group, OfflinePlayer player) {
         return null;
     }
 
@@ -122,5 +135,29 @@ public class ClaimManager implements ClaimsApi {
     @Override
     public boolean removeGroupFromClaim(Claim claim, Group group) {
         return false;
+    }
+
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Group playerGroup = storage.getPlayerGroup(event.getPlayer());
+        if (playerGroup == null) {
+            if (storage.createGroup(event.getPlayer().getName(), 8, true)) {
+                playerGroup = storage.getPlayerGroup(event.getPlayer());
+            }
+        }
+    }
+
+    @EventHandler
+    public void onChunkLoad(ChunkLoadEvent event) {
+        Claim claimData = storage.getClaimData(event.getChunk());
+        if (claimData != null) {
+            claimCache.put(event.getChunk(), claimData);
+        }
+    }
+
+    @EventHandler
+    public void onChunkUnload(ChunkUnloadEvent event) {
+        claimCache.remove(event.getChunk());
     }
 }

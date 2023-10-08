@@ -6,7 +6,7 @@ import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -75,13 +75,35 @@ public interface ClaimsApi {
      */
     @Nullable Claim getClaim(Chunk chunk);
 
+
+    /**
+     * Gets the claims of a group
+     *
+     * @param group the group to get the claims from
+     * @return the claims of the group
+     * @see #getClaims(OfflinePlayer) to get the claims of a player
+     */
+    List<Claim> getClaims(Group group);
+
+
+    /**
+     * Gets the claims of a player
+     *
+     * @param player the player to get the claims from
+     * @return the claims of the player
+     * @see #getClaims(Group) to get the claims of a group
+     */
+    default List<Claim> getClaims(OfflinePlayer player) {
+        return getClaims(getPlayerGroup(player));
+    }
+
     /**
      * Gets the groups of a player
      *
      * @param player the player to get the groups from
      * @return the groups of the player
      */
-    List<Group> getGroups(Player player);
+    List<Group> getGroups(OfflinePlayer player);
 
     /**
      * Gets the "player" group of a player
@@ -89,12 +111,13 @@ public interface ClaimsApi {
      * @param player the player to get the group from
      * @return the "player" group of the player
      */
-    Group getPlayerGroup(Player player);
+    Group getPlayerGroup(OfflinePlayer player);
 
     /**
      * Sets the maximal amount of chunks a group can claim
+     *
      * @param group the group
-     * @param max the new maximum
+     * @param max   the new maximum
      * @see Group#getMaxClaims() to get the maximal amount of claims
      */
     void setMaxClaims(Group group, int max);
@@ -115,10 +138,10 @@ public interface ClaimsApi {
      * @param group  the group to add the player to
      * @param player the player to add to the group
      * @return the group member or null if failed
-     * @see #addGroupMember(Group, Player, PermissionLevel) to add a player with a specific permission level
+     * @see #addGroupMember(Group, OfflinePlayer, PermissionLevel) to add a player with a specific permission level
      * @see #setPermissionLevel(GroupMember, PermissionLevel) to change the permission level of a member
      */
-    default @Nullable GroupMember addGroupMember(Group group, Player player) {
+    default @Nullable GroupMember addGroupMember(Group group, OfflinePlayer player) {
         return addGroupMember(group, player, PermissionLevel.MEMBER);
     }
 
@@ -130,7 +153,7 @@ public interface ClaimsApi {
      * @param level  the permission level of the player
      * @return the group member or null if failed
      */
-    @Nullable GroupMember addGroupMember(Group group, Player player, PermissionLevel level);
+    @Nullable GroupMember addGroupMember(Group group, OfflinePlayer player, PermissionLevel level);
 
     /**
      * Gets a group member from a group
@@ -139,7 +162,7 @@ public interface ClaimsApi {
      * @param player the player to get the member from
      * @return the group member or null if not found
      */
-    @Nullable GroupMember getGroupMember(Group group, Player player);
+    @Nullable GroupMember getGroupMember(Group group, OfflinePlayer player);
 
     /**
      * Removes a group member from a group
@@ -194,7 +217,7 @@ public interface ClaimsApi {
      * @return true if successful, false otherwise
      * @see #addGroupToClaim(Claim, Group) to add a group to a claim
      */
-    default boolean addPlayerToClaim(Claim claim, Player player) {
+    default boolean addPlayerToClaim(Claim claim, OfflinePlayer player) {
         return addGroupToClaim(claim, getPlayerGroup(player));
     }
 
@@ -206,7 +229,7 @@ public interface ClaimsApi {
      * @return true if successful, false otherwise
      * @see #removeGroupFromClaim(Claim, Group) to remove a group from a claim
      */
-    default boolean removePlayerFromClaim(Claim claim, Player player) {
+    default boolean removePlayerFromClaim(Claim claim, OfflinePlayer player) {
         return removeGroupFromClaim(claim, getPlayerGroup(player));
     }
 

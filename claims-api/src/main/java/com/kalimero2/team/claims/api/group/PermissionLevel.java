@@ -22,6 +22,10 @@ public enum PermissionLevel {
         return null;
     }
 
+    public boolean isHigherOrEqual(PermissionLevel permissionLevel) {
+        return this.level >= permissionLevel.getLevel();
+    }
+
     public int getLevel() {
         return level;
     }

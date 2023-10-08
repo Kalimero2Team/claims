@@ -1,21 +1,22 @@
 package com.kalimero2.team.claims.paper.command;
 
+import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.context.CommandContext;
-import com.kalimero2.team.claims.paper.PaperClaims;
-import com.kalimero2.team.claims.paper.claim.ClaimManager;
+import com.kalimero2.team.claims.api.Claim;
+import com.kalimero2.team.claims.api.group.Group;
+import com.kalimero2.team.claims.api.group.GroupMember;
+import com.kalimero2.team.claims.api.group.PermissionLevel;
+import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.Chunk;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 
 public class BaseChunkCommands extends CommandHandler {
     public BaseChunkCommands(CommandManager commandManager) {
@@ -30,6 +31,7 @@ public class BaseChunkCommands extends CommandHandler {
         commandManager.command(
                 commandManager.commandBuilder("chunk")
                         .literal("claim")
+                        .argument(GroupArgument.optional("group"))
                         .handler(this::claim)
         );
         commandManager.command(
@@ -40,30 +42,28 @@ public class BaseChunkCommands extends CommandHandler {
         commandManager.command(
                 commandManager.commandBuilder("chunk")
                         .literal("list")
+                        .argument(IntegerArgument.optional("page"))
                         .handler(this::listClaims)
         );
     }
 
     private void listClaims(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
+            List<Claim> claims = api.getClaims(player);
+            // TODO: pagination
 
         }
     }
 
     private void unClaim(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
-
-            if (chunk.isClaimed()) {
-                if (chunk.hasOwner() && chunk.getOwner().equals(player.getUniqueId()) || forcedPlayers.contains(player.getUniqueId())) {
-                    ClaimManager.unclaimChunk(chunk, player);
+            Claim claim = api.getClaim(player.getChunk());
+            if (claim != null) {
+                Group owner = claim.getOwner();
+                GroupMember groupMember = api.getGroupMember(owner, player);
+                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.OWNER)) {
+                    api.unclaimChunk(player.getChunk());
                     plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_success");
-                } else if (!chunk.hasOwner() && player.hasPermission("claims.admin.teamClaim")) {
-                    chunk.setClaimed(false);
-                    chunk.setProperties(new HashMap<>());
-                    chunk.setTrusted(null);
-                    chunk.clearIgnoredInteractables();
-
-                    plugin.getMessageUtil().sendMessage(player, "chunk.team_unclaim_success");
                 } else {
                     plugin.getMessageUtil().sendMessage(player, "chunk.unclaim_fail_not_owner");
                 }
@@ -76,18 +76,23 @@ public class BaseChunkCommands extends CommandHandler {
 
     private void claim(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
-            ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
-            if (chunk.isClaimed()) {
-                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_already_claimed");
-            } else if (!PaperClaims.plugin.getConfig().getStringList("claims.worlds").contains(player.getWorld().getWorldFolder().getName())) {
-                PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_world_not_claimable");
+            Claim claim = api.getClaim(player.getChunk());
+            if (claim != null) {
+                plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_already_claimed");
+            } else if (!plugin.getConfig().getStringList("claims.worlds").contains(player.getWorld().getWorldFolder().getName())) {
+                plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_world_not_claimable");
             } else {
-                if (ClaimManager.claimChunk(chunk, player)) {
-                    PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_success");
+                Group playerGroup = api.getPlayerGroup(player);
+                Group group = context.getOrDefault("group", playerGroup);
+
+                if (api.claimChunk(player.getChunk(), group)) {
+                    plugin.getMessageUtil().sendMessage(player, "chunk.claim_success");
+                    // TODO: Claim Success Message with Group Name
                 } else {
-                    TagResolver.Single count = Placeholder.unparsed("count", "0");
-                    TagResolver.Single max = Placeholder.unparsed("max_count", "0");
-                    PaperClaims.plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_too_many_claims", count, max);
+                    int claims = api.getClaims(group).size();
+                    TagResolver.Single count = Placeholder.unparsed("count", String.valueOf(claims));
+                    TagResolver.Single max = Placeholder.unparsed("max_count", String.valueOf(group.getMaxClaims()));
+                    plugin.getMessageUtil().sendMessage(player, "chunk.claim_fail_too_many_claims", count, max);
                 }
 
             }
@@ -97,30 +102,32 @@ public class BaseChunkCommands extends CommandHandler {
 
     private void info(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
-            ClaimsChunk chunk = ClaimsChunk.of(player.getChunk());
-            Server server = PaperClaims.plugin.getServer();
-            MessageUtil messageUtil = PaperClaims.plugin.getMessageUtil();
+            Claim claim = api.getClaim(player.getChunk());
+            Server server = plugin.getServer();
+            MessageUtil messageUtil = plugin.getMessageUtil();
 
-            messageUtil.sendMessage(player, "chunk.info", Placeholder.component("chunk_x", Component.text(chunk.getChunkX())), Placeholder.component("chunk_z", Component.text(chunk.getChunkZ())));
+            Chunk chunk = player.getChunk();
+            messageUtil.sendMessage(player, "chunk.info", Placeholder.component("chunk_x", Component.text(chunk.getX())), Placeholder.component("chunk_z", Component.text(chunk.getZ())));
 
-            if (chunk.isClaimed()) {
+            if (claim != null) {
+                Group owner = claim.getOwner();
                 messageUtil.sendMessage(player, "chunk.claimed_true");
-                if (chunk.hasOwner()) {
-                    String owner_name = server.getOfflinePlayer(chunk.getOwner()).getName();
-                    if (owner_name == null) {
-                        owner_name = chunk.getOwner().toString();
-                    }
-                    messageUtil.sendMessage(player, "chunk.claim_owner", Placeholder.unparsed("player", owner_name));
-                } else {
-                    messageUtil.sendMessage(player, "chunk.team_chunk");
-                }
 
-                List<UUID> trusted = chunk.getTrustedList();
-                if (trusted.size() >= 1) {
+                // TODO: Get Group Name
+                // TODO: Differentiate between Group and Player
+                messageUtil.sendMessage(player, "chunk.claim_owner", Placeholder.unparsed("player", owner.toString()));
+
+                List<Group> members = claim.getMembers();
+                if (!members.isEmpty()) {
                     messageUtil.sendMessage(player, "chunk.claim_trusted_start");
-                    for (UUID trustedPlayer : trusted) {
-                        OfflinePlayer offlinePlayer = server.getOfflinePlayer(trustedPlayer);
-                        messageUtil.sendMessage(player, "chunk.claim_trusted_player", Placeholder.unparsed("player", Objects.requireNonNullElse(offlinePlayer.getName(), "player")));
+                    for (Group memberGroup : members) {
+                        if (memberGroup.isPlayer()) {
+                            // TODO: Get Player (Group) Name
+                            messageUtil.sendMessage(player, "chunk.claim_trusted_player", Placeholder.unparsed("player", memberGroup.toString()));
+                        } else {
+                            // TODO: Get Group Name
+                            messageUtil.sendMessage(player, "chunk.claim_trusted_group", Placeholder.unparsed("group", memberGroup.toString()));
+                        }
                     }
                 }
             } else {

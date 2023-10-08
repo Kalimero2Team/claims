@@ -113,17 +113,16 @@ public class Storage {
 
 
         // CLAIM_MEMBERS
-        // ID, CHUNK, GROUP
+        // ID, CLAIM_ID, GROUP_ID
 
         executeUpdate("CREATE TABLE IF NOT EXISTS CLAIM_MEMBERS(" +
-                "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
                 "GROUP_ID INTEGER NOT NULL REFERENCES GROUPS(ID)" +
                 ");");
 
 
         // CLAIM_FLAGS
-        // CHUNK_ID, FLAG_IDENTIFIER, STATE
+        // CLAIM_ID, FLAG_IDENTIFIER, STATE
 
         executeUpdate("CREATE TABLE IF NOT EXISTS CLAIM_FLAGS(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
@@ -133,7 +132,7 @@ public class Storage {
 
 
         // BLOCK_INTERACTABLES
-        // CHUNK_ID, BLOCK_IDENTIFIER, STATE
+        // CLAIM_ID, BLOCK_IDENTIFIER, STATE
 
         executeUpdate("CREATE TABLE IF NOT EXISTS BLOCK_INTERACTABLES(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
@@ -142,7 +141,7 @@ public class Storage {
                 ");");
 
         // ENTITY_INTERACTABLES
-        // CHUNK_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE
+        // CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE
 
         executeUpdate("CREATE TABLE IF NOT EXISTS ENTITY_INTERACTABLES(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
@@ -161,29 +160,32 @@ public class Storage {
 
             ResultSet resultSet = executeQuery("SELECT * FROM CLAIMS WHERE CHUNK_X = ? AND CHUNK_Z = ? AND WORLD = ?", chunkX, chunkZ, world);
 
-            int claim_id = resultSet.getInt("ID");
-            StoredClaim claim = new StoredClaim(
-                    getGroup(resultSet.getInt("OWNER")),
-                    chunk,
-                    getMembers(claim_id),
-                    getBlockInteractables(claim_id),
-                    getEntityInteractables(claim_id),
-                    getFlags(claim_id),
-                    resultSet.getTimestamp("CLAIMED_SINCE").toLocalDateTime(),
-                    resultSet.getTimestamp("LAST_INTERACTION").toLocalDateTime(),
-                    resultSet.getTimestamp("LAST_ONLINE").toLocalDateTime()
-            );
+            if (resultSet.next()) {
+                int claim_id = resultSet.getInt("ID");
 
+                return new StoredClaim(
+                        claim_id,
+                        getGroup(resultSet.getInt("OWNER")),
+                        chunk,
+                        getMembers(claim_id),
+                        getBlockInteractables(claim_id),
+                        getEntityInteractables(claim_id),
+                        getFlags(claim_id),
+                        resultSet.getTimestamp("CLAIMED_SINCE").toLocalDateTime(),
+                        resultSet.getTimestamp("LAST_INTERACTION").toLocalDateTime(),
+                        resultSet.getTimestamp("LAST_ONLINE").toLocalDateTime()
+                );
+            }
             resultSet.close();
 
-            return claim;
+            return null;
         } catch (SQLException ignored) {
             return null;
         }
     }
 
     private @Nullable HashMap<Flag, Boolean> getFlags(int claimId) {
-        try{
+        try {
             HashMap<Flag, Boolean> flags = new HashMap<>();
             ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claimId);
             while (resultSet.next()) {
@@ -241,11 +243,12 @@ public class Storage {
             ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE ID = ?", id);
             if (resultSet.next()) {
                 int maxClaims = resultSet.getInt("MAX_CLAIMS");
+                String name = resultSet.getString("NAME");
                 boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
                 List<GroupMember> members = getGroupMembers(id);
                 resultSet.close();
 
-                return new StoredGroup(id, maxClaims, isPlayer, members);
+                return new StoredGroup(id, name, maxClaims, isPlayer, members);
             }
             resultSet.close();
 
@@ -279,16 +282,25 @@ public class Storage {
 
             if (resultSet.next()) {
                 int id = resultSet.getInt("ID");
+                String name = resultSet.getString("NAME");
                 int maxClaims = resultSet.getInt("MAX_CLAIMS");
                 boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
                 List<GroupMember> members = getGroupMembers(id);
                 resultSet.close();
-
-                return new StoredGroup(id, maxClaims, isPlayer, members);
+                return new StoredGroup(id, name, maxClaims, isPlayer, members);
+            }else {
+                return null;
             }
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
 
-            resultSet.close();
+    public List<Group> getGroups(OfflinePlayer player) {
+        try {
+            List<Group> groups = new ArrayList<>();
 
+            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE IS_PLAYER = TRUE");
             return null;
         } catch (SQLException ignored) {
             return null;
@@ -311,8 +323,97 @@ public class Storage {
         }
     }
 
+    public boolean createGroup(String name, int maxClaims, boolean isPlayer) {
+        try {
+            executeUpdate("INSERT INTO GROUPS (NAME, MAX_CLAIMS, IS_PLAYER) VALUES (?, ?, ?)", name, maxClaims, isPlayer);
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
 
+    public boolean deleteGroup(Group group) {
+        try {
+            executeUpdate("DELETE FROM GROUPS WHERE ID = ?", group.getId());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
 
+    public boolean setMaxClaims(Group group, int max) {
+        try {
+            executeUpdate("UPDATE GROUPS SET MAX_CLAIMS = ? WHERE ID = ?", max, group.getId());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
 
+    public boolean addGroupMember(Group group, OfflinePlayer player, PermissionLevel level) {
+        try {
+            executeUpdate("INSERT INTO GROUP_MEMBERS (GROUP_ID, PLAYER, PERMISSION_LEVEL) VALUES (?, ?, ?)", group.getId(), player.getUniqueId().toString(), level.getLevel());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
 
+    public boolean removeGroupMember(Group group, GroupMember member) {
+        try {
+            executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ? AND PLAYER = ?", group.getId(), member.getPlayer().getUniqueId().toString());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
+    public boolean setPermissionLevel(Group group, GroupMember member, PermissionLevel level) {
+        try {
+            executeUpdate("UPDATE GROUP_MEMBERS SET PERMISSION_LEVEL = ? WHERE GROUP_ID = ? AND PLAYER = ?", level.getLevel(), group.getId(), member.getPlayer().getUniqueId().toString());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
+    public boolean unclaimClaim(Claim claim) {
+        try {
+
+            executeUpdate("DELETE FROM CLAIMS WHERE ID = ?", claim.getId());
+            executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+            executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+            executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
+            executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
+
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
+    public boolean claimChunk(Chunk chunk, Group group) {
+        try {
+            int chunkX = chunk.getX();
+            int chunkZ = chunk.getZ();
+            UUID world = chunk.getWorld().getUID();
+
+            executeUpdate("INSERT INTO CLAIMS (OWNER, CHUNK_X, CHUNK_Z, WORLD, CLAIMED_SINCE, LAST_INTERACTION, LAST_ONLINE, EXPIRE_TIME) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    group.getId(),
+                    chunkX,
+                    chunkZ,
+                    world.toString(),
+                    System.currentTimeMillis(),
+                    System.currentTimeMillis(),
+                    System.currentTimeMillis(),
+                    0
+            );
+
+            executeUpdate("INSERT INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", getClaimData(chunk).getId(), group.getId());
+
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
 }

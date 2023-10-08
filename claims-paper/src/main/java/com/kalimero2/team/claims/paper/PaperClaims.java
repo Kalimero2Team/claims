@@ -1,9 +1,8 @@
 package com.kalimero2.team.claims.paper;
 
-import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.ClaimsApiHolder;
 import com.kalimero2.team.claims.paper.claim.ClaimManager;
-import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
+import com.kalimero2.team.claims.paper.command.CommandManager;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
 import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
 import com.kalimero2.team.claims.paper.storage.Storage;
@@ -29,23 +28,20 @@ public class PaperClaims extends JavaPlugin {
     @Override
     public void onEnable() {
         storage = new Storage(this, new File(this.getDataFolder() + "/" + getConfig().getString("database")));
-        api = new ClaimManager(storage);
+        api = new ClaimManager(this, storage);
         ClaimsApiHolder.setApi(api);
 
         getServer().getPluginManager().registerEvents(new ChunkProtectionListener(), this);
-        getServer().getPluginManager().registerEvents(new ChunkLoadListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerMoveListener(), this);
 
         chunkBorders = new ChunkBorders(this);
 
-        /*
         try {
-            new CommandManager();
+            new CommandManager(this);
             getLogger().info("Commands registered");
         } catch (Exception e) {
             getLogger().warning("Failed to initialize command manager: " + e.getMessage());
         }
-         */
     }
 
     public MessageUtil getMessageUtil() {

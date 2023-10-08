@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class StoredClaim implements Claim {
+    private final int id;
 
     private final Group owner;
     private final Chunk chunk;
@@ -24,7 +25,8 @@ public class StoredClaim implements Claim {
     private final LocalDateTime lastOnline;
 
 
-    protected StoredClaim(Group owner, Chunk chunk, List<Group> members, List<BlockInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, LocalDateTime claimedSince, LocalDateTime lastInteraction, LocalDateTime lastOnline) {
+    protected StoredClaim(int id, Group owner, Chunk chunk, List<Group> members, List<BlockInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, LocalDateTime claimedSince, LocalDateTime lastInteraction, LocalDateTime lastOnline) {
+        this.id = id;
         this.owner = owner;
         this.chunk = chunk;
         this.members = members;
@@ -36,6 +38,11 @@ public class StoredClaim implements Claim {
         this.lastOnline = lastOnline;
     }
 
+
+    @Override
+    public int getId() {
+        return id;
+    }
 
     @Override
     public Group getOwner() {

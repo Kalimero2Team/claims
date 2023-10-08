@@ -1,6 +1,9 @@
 package com.kalimero2.team.claims.paper.listener;
 
-import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
+import com.kalimero2.team.claims.api.Claim;
+import com.kalimero2.team.claims.api.ClaimsApi;
+import com.kalimero2.team.claims.api.group.Group;
+import com.kalimero2.team.claims.api.interactable.BlockInteractable;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import org.bukkit.Chunk;
@@ -59,46 +62,45 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.projectiles.BlockProjectileSource;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 
 public class ChunkProtectionListener implements Listener {
-    private boolean shouldCancel(Player player, Chunk bukkitChunk) {
-        return shouldCancel(player, ClaimsChunk.of(bukkitChunk));
+
+    private final ClaimsApi api;
+
+    public ChunkProtectionListener() {
+        this.api = ClaimsApi.getApi();
     }
 
-    private boolean shouldCancel(Player player, ClaimsChunk chunk) {
-        if (chunk.isClaimed()) {
-            if (chunk.hasOwner()) {
-                if (!chunk.getOwner().equals(player.getUniqueId())) {
-                    return !chunk.isTrusted(player.getUniqueId());
-                }
-            } else {
-                return !player.hasPermission("claims.admin.teamclaim");
-            }
+    private boolean shouldCancel(Player player, Chunk bukkitChunk) {
+        return shouldCancel(player, api.getClaim(bukkitChunk));
+    }
+
+    private boolean shouldCancel(Player player, Claim claim) {
+        if (claim != null) {
+            List<Group> members = claim.getMembers();
+
+            Optional<Group> any = members.stream().filter(group -> api.getGroupMember(group, player) != null).findAny();
+            return any.isEmpty();
         }
         return false;
     }
 
     private boolean shouldCancel(Chunk originChunk, Chunk destChunk) {
-        return shouldCancel(ClaimsChunk.of(originChunk), ClaimsChunk.of(destChunk));
+        return shouldCancel(api.getClaim(originChunk), api.getClaim(destChunk));
     }
 
-    private boolean shouldCancel(ClaimsChunk originChunk, ClaimsChunk destChunk) {
-        if (originChunk.equals(destChunk)) {
+    private boolean shouldCancel(@Nullable Claim originClaim, @Nullable Claim destClaim) {
+        if (originClaim != null && originClaim.equals(destClaim)) {
             return false;
         }
-        if (destChunk.isClaimed()) { // destChunk is claimed
-            if (originChunk.isClaimed()) { // both chunks are claimed
-                if (destChunk.hasOwner()) { // destChunk is claimed by a player
-                    if (originChunk.hasOwner()) { // both chunks are claimed by a player
-                        return !destChunk.getOwner().equals(originChunk.getOwner()); // true if different owner, false if same owner
-                    }
-                    return true; // destChunk is claimed by a player, originChunk isn't
-                } else {
-                    if (originChunk.hasOwner()) {
-                        return true; // originChunk is claimed by a player, destChunk isn't
-                    }
+        if (destClaim != null) { // destChunk is claimed
+            if (originClaim != null) { // both chunks are claimed
+                if (originClaim.getOwner().equals(destClaim.getOwner())) { // both chunks are claimed by the same group
+                    return false;
                 }
             } else {
                 return true; // originChunk is not claimed, dest chunk is claimed
@@ -109,48 +111,43 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onBucketEmpty(PlayerBucketEmptyEvent event) {
-        ClaimsChunk chunk = ClaimsChunk.of(event.getBlock().getChunk());
-        if (shouldCancel(event.getPlayer(), chunk)) {
+        if (shouldCancel(event.getPlayer(), event.getBlock().getChunk())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBucketFill(PlayerBucketFillEvent event) {
-        ClaimsChunk chunk = ClaimsChunk.of(event.getBlock().getChunk());
-        if (shouldCancel(event.getPlayer(), chunk)) {
+        if (shouldCancel(event.getPlayer(), event.getBlock().getChunk())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onPlayerBucketFishEvent(PlayerBucketEntityEvent event) {
-        ClaimsChunk chunk = ClaimsChunk.of(event.getEntity().getChunk());
-        if (shouldCancel(event.getPlayer(), chunk)) {
+        if (shouldCancel(event.getPlayer(), event.getEntity().getChunk())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onPlayerTakeLecternBookEvent(PlayerTakeLecternBookEvent event) {
-        ClaimsChunk chunk = ClaimsChunk.of(event.getLectern().getChunk());
-        if (shouldCancel(event.getPlayer(), chunk)) {
+        if (shouldCancel(event.getPlayer(), event.getLectern().getChunk())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        ClaimsChunk chunk = ClaimsChunk.of(event.getBlock().getChunk());
-        if (shouldCancel(event.getPlayer(), chunk)) {
+        if (shouldCancel(event.getPlayer(), event.getBlock().getChunk())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
-        ClaimsChunk chunk = ClaimsChunk.of(event.getBlock().getChunk());
-        if (shouldCancel(event.getPlayer(), chunk)) {
+        Claim claim = api.getClaim(event.getBlock().getChunk());
+        if (shouldCancel(event.getPlayer(), claim)) {
             event.setCancelled(true);
         }
     }
@@ -158,8 +155,8 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onBlocksPlace(BlockMultiPlaceEvent event) {
         for (BlockState blockState : event.getReplacedBlockStates()) {
-            ClaimsChunk chunk = ClaimsChunk.of(blockState.getChunk());
-            if (shouldCancel(event.getPlayer(), chunk)) {
+            Claim claim = api.getClaim(blockState.getChunk());
+            if (shouldCancel(event.getPlayer(), claim)) {
                 event.setCancelled(true);
             }
         }
@@ -167,12 +164,13 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
+        // TODO: Explosion Flag
         event.setCancelled(true);
     }
 
     @EventHandler
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
-        if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getRightClicked().getChunk()))) {
+        if (shouldCancel(event.getPlayer(), event.getRightClicked().getChunk())) {
             event.setCancelled(true);
         }
     }
@@ -181,7 +179,7 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onTeleport(PlayerTeleportEvent event) {
         if (event.getCause().equals(PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT)) {
-            if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getTo().getChunk()))) {
+            if (shouldCancel(event.getPlayer(), event.getTo().getChunk())) {
                 event.setCancelled(true);
             }
         }
@@ -196,11 +194,11 @@ public class ChunkProtectionListener implements Listener {
         } else {
             if (event.getDamager() instanceof Projectile projectile) {
                 if (projectile.getShooter() instanceof Player player) {
-                    if (shouldCancel(player, ClaimsChunk.of(event.getEntity().getChunk()))) {
+                    if (shouldCancel(player, api.getClaim(event.getEntity().getChunk()))) {
                         onEntityDamageByPlayer(event, player);
                     }
                 } else if (projectile.getShooter() instanceof BlockProjectileSource blockProjectileSource) {
-                    if (shouldCancel(ClaimsChunk.of(event.getEntity().getChunk()), ClaimsChunk.of(blockProjectileSource.getBlock().getChunk()))) {
+                    if (shouldCancel(event.getEntity().getChunk(), blockProjectileSource.getBlock().getChunk())) {
                         event.setCancelled(true);
                     }
                 }
@@ -211,16 +209,16 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onVehicleDamage(VehicleDamageEvent event) {
         if (event.getAttacker() instanceof Player player) {
-            if (shouldCancel(player, ClaimsChunk.of(event.getVehicle().getChunk()))) {
+            if (shouldCancel(player, event.getVehicle().getChunk())) {
                 event.setCancelled(true);
             }
         } else if (event.getAttacker() instanceof Projectile projectile) {
             if (projectile.getShooter() instanceof Player player) {
-                if (shouldCancel(player, ClaimsChunk.of(event.getVehicle().getChunk()))) {
+                if (shouldCancel(player, event.getVehicle().getChunk())) {
                     event.setCancelled(true);
                 }
             } else if (projectile.getShooter() instanceof BlockProjectileSource blockProjectileSource) {
-                if (shouldCancel(ClaimsChunk.of(event.getVehicle().getChunk()), ClaimsChunk.of(blockProjectileSource.getBlock().getChunk()))) {
+                if (shouldCancel(event.getVehicle().getChunk(), blockProjectileSource.getBlock().getChunk())) {
                     event.setCancelled(true);
                 }
             }
@@ -231,7 +229,7 @@ public class ChunkProtectionListener implements Listener {
         if (event.getEntity() instanceof Player || event.getEntity() instanceof Monster) {
             event.setCancelled(false);
         } else if (event.getEntity() instanceof Animals || event.getEntity() instanceof Tameable || event.getEntity() instanceof NPC || event.getEntity() instanceof Hanging || event.getEntity() instanceof ArmorStand || event.getEntity() instanceof Vehicle) {
-            if (shouldCancel(player, ClaimsChunk.of(event.getEntity().getLocation().getChunk()))) {
+            if (shouldCancel(player, event.getEntity().getLocation().getChunk())) {
                 event.setCancelled(true);
             }
         }
@@ -240,9 +238,17 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onPlayerInteractEvent(PlayerInteractEvent event) {
         if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && event.getClickedBlock() != null) {
-            if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getClickedBlock().getChunk()))) {
+            if (shouldCancel(event.getPlayer(), event.getClickedBlock().getChunk())) {
                 Material type = event.getClickedBlock().getType();
-                if (ClaimsChunk.of(event.getClickedBlock().getChunk()).shouldIgnoreInteractable(type)) {
+
+                Claim claim = api.getClaim(event.getClickedBlock().getChunk());
+
+                if (claim == null) {
+                    return;
+                }
+
+                // TODO: Check for BlockInteractable state and add EntityInteractables
+                if (claim.getBlockInteractables().stream().map(BlockInteractable::getBlockMaterial).toList().contains(type)) {
                     return;
                 }
 
@@ -258,7 +264,7 @@ public class ChunkProtectionListener implements Listener {
         } else if (event.getAction().equals(Action.PHYSICAL)) {
             if (event.getClickedBlock() != null) {
                 if (event.getClickedBlock().getType().equals(Material.FARMLAND)) {
-                    if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getClickedBlock().getChunk()))) {
+                    if (shouldCancel(event.getPlayer(), event.getClickedBlock().getChunk())) {
                         event.setCancelled(true);
                     }
                 }
@@ -268,14 +274,14 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getRightClicked().getChunk()))) {
+        if (shouldCancel(event.getPlayer(), event.getRightClicked().getChunk())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onEntityPlace(EntityPlaceEvent event) {
-        if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getEntity().getChunk()))) {
+        if (shouldCancel(event.getPlayer(), event.getEntity().getChunk())) {
             event.setCancelled(true);
         }
     }
@@ -283,11 +289,11 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onHangingBreakByEntity(HangingBreakByEntityEvent event) {
         if (event.getRemover() instanceof Player player) {
-            if (shouldCancel(player, ClaimsChunk.of(event.getEntity().getChunk()))) {
+            if (shouldCancel(player, event.getEntity().getChunk())) {
                 event.setCancelled(true);
             }
         } else if (event.getRemover() instanceof Vehicle) { // Boats can destory hanging entities
-            if (ClaimsChunk.of(event.getEntity().getChunk()).isClaimed()) {
+            if (api.getClaim(event.getEntity().getChunk()) != null) {
                 event.setCancelled(true);
             }
         }
@@ -296,7 +302,7 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onHangingBreakEvent(HangingBreakEvent event) {
         if (event.getCause().equals(HangingBreakEvent.RemoveCause.PHYSICS)) { // Also includes Boats. There is no Event when a boat breaks a hanging entity
-            if (ClaimsChunk.of(event.getEntity().getChunk()).isClaimed()) {
+            if (api.getClaim(event.getEntity().getChunk()) != null) {
                 event.setCancelled(true);
             }
         }
@@ -315,21 +321,21 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onHangingBreak(HangingBreakByEntityEvent event) {
         if (event.getRemover() instanceof Player player) {
-            if (shouldCancel(player, ClaimsChunk.of(event.getEntity().getChunk()))) {
+            if (shouldCancel(player, event.getEntity().getChunk())) {
                 event.setCancelled(true);
             }
         } else if (event.getRemover() instanceof Projectile projectile) {
             if (projectile.getShooter() instanceof Player player) {
-                if (shouldCancel(player, ClaimsChunk.of(event.getEntity().getChunk()))) {
+                if (shouldCancel(player, event.getEntity().getChunk())) {
                     event.setCancelled(true);
                 }
             } else {
-                if (ClaimsChunk.of(event.getEntity().getChunk()).isClaimed()) {
+                if (api.getClaim(event.getEntity().getChunk()) != null) {
                     event.setCancelled(true);
                 }
             }
         } else if (event.getRemover() instanceof Creeper) {
-            if (ClaimsChunk.of(event.getEntity().getChunk()).isClaimed()) {
+            if (api.getClaim(event.getEntity().getChunk()) != null) {
                 event.setCancelled(true);
             }
         }
@@ -337,7 +343,7 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onHangingPlace(HangingPlaceEvent event) {
-        if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getEntity().getChunk()))) {
+        if (shouldCancel(event.getPlayer(), event.getEntity().getChunk())) {
             event.setCancelled(true);
         }
     }
@@ -347,20 +353,20 @@ public class ChunkProtectionListener implements Listener {
         if (event.getEntity() instanceof Enderman) {
             event.setCancelled(true);
         } else if (event.getEntity() instanceof Wither) {
-            if (ClaimsChunk.of(event.getBlock().getChunk()).isClaimed()) {
+            if (api.getClaim(event.getBlock().getChunk()) != null) {
                 event.setCancelled(true);
             }
         } else if (event.getEntity() instanceof WitherSkull) {
-            if (ClaimsChunk.of(event.getBlock().getChunk()).isClaimed()) {
+            if (api.getClaim(event.getBlock().getChunk()) != null) {
                 event.setCancelled(true);
             }
         } else if (event.getEntity() instanceof Boat) {
-            if (ClaimsChunk.of(event.getBlock().getChunk()).isClaimed()) {
+            if (api.getClaim(event.getBlock().getChunk()) != null) {
                 event.setCancelled(true);
             }
         } else if (event.getEntity() instanceof ThrownPotion thrownPotion) { // A Thrown potion can dowse fire
             if (thrownPotion.getShooter() instanceof Player player) {
-                if (shouldCancel(player, ClaimsChunk.of(event.getBlock().getChunk()))) {
+                if (shouldCancel(player, event.getBlock().getChunk())) {
                     event.setCancelled(true);
                 }
             }
@@ -369,13 +375,13 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onEntityInsideBlock(EntityInsideBlockEvent event) {
-        ClaimsChunk chunk = ClaimsChunk.of(event.getBlock().getChunk());
-        if (chunk.isClaimed()) {
+        Claim claim = api.getClaim(event.getBlock().getChunk());
+        if (claim != null) {
             if (event.getEntity() instanceof Ravager) { // Ravagers break Crop Blocks
                 event.setCancelled(true);
             } else if (event.getEntity() instanceof Projectile projectile) { // Only projectiles that are shot by trusted players can interact
                 if (projectile.getShooter() instanceof Player player) {
-                    if (shouldCancel(player, chunk)) {
+                    if (shouldCancel(player, claim)) {
                         event.setCancelled(true);
                     }
                 } else {
@@ -389,8 +395,10 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler
     public void onBlockIgnite(BlockIgniteEvent event) {
         if (event.getCause().equals(BlockIgniteEvent.IgniteCause.ARROW)) {
-            if (shouldCancel(event.getPlayer(), ClaimsChunk.of(event.getBlock().getChunk()))) {
-                if (!ClaimsChunk.of(event.getBlock().getChunk()).shouldIgnoreInteractable(Material.CAMPFIRE)) {
+            Claim claim = api.getClaim(event.getBlock().getChunk());
+            if (shouldCancel(event.getPlayer(), claim)) {
+                // TODO: Check for BlockInteractable state
+                if (claim.getBlockInteractables().stream().map(BlockInteractable::getBlockMaterial).toList().contains(Material.CAMPFIRE)) {
                     event.setCancelled(true);
                 }
             }
@@ -400,7 +408,7 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onEntityInteract(EntityInteractEvent event) {
-        if (ClaimsChunk.of(event.getBlock().getChunk()).isClaimed()) {
+        if (api.getClaim(event.getBlock().getChunk()) != null) {
             if (event.getEntity() instanceof Steerable steerable) {
                 // EntityInteractEvent isn't called when a Java Player is riding with a pig over a pressure plate but when a Bedrock Player is riding with a pig over a pressure plate the event is fired (because GeyserHacks is "faking" the Riding and causes the event to be fired). For Java players it is probably another event or a Bukkit bug.
                 Optional<Entity> any = steerable.getPassengers().stream().filter(entity -> entity instanceof Player).findAny();
@@ -451,8 +459,7 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onPlayerItemFrameChange(PlayerItemFrameChangeEvent event) {
-        ClaimsChunk claimsChunk = ClaimsChunk.of(event.getItemFrame().getChunk());
-        if (shouldCancel(event.getPlayer(), claimsChunk)) {
+        if (shouldCancel(event.getPlayer(), event.getItemFrame().getChunk())) {
             event.setCancelled(true);
         }
     }

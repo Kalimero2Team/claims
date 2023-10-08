@@ -1,7 +1,6 @@
 package com.kalimero2.team.claims.paper.command;
 
 import cloud.commandframework.context.CommandContext;
-import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.util.ChunkBorders;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

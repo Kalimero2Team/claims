@@ -43,3 +43,4 @@ chunk:
   no_ignored_interactables: "Alle interaktiven Blöcke sind geschützt"
   ignored_interactables: "Die folgenden Blöcke sind nicht geschützt: <materials>"
   generic_fail_chunk_not_claimed: "<red>Dieser Chunk ist nicht geclaimed</red>"
+  generic_fail_no_permission: "<red>Du hast keine Berechtigung für diese Aktion</red>"

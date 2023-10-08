@@ -44,3 +44,4 @@ chunk:
   no_ignored_interactables: "There are no interactable blocks on the ignore list of this chunk"
   ignored_interactables: "Interactable blocks on the ignore list of this chunk: <materials>"
   generic_fail_chunk_not_claimed: "<red>Fail</red> This chunk is not claimed"
+  generic_fail_no_permission: "<red>Fail</red> You don't have permission to do this"
