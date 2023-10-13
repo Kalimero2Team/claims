@@ -511,7 +511,17 @@ public class Storage {
 
     public void setFlagState(Claim claim, Flag flag, boolean state) {
         try {
+            // TODO: Make this better
+            executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), state);
             executeUpdate("UPDATE CLAIM_FLAGS SET STATE = ? WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", state, claim.getId(), flag.getKey().toString());
+        } catch (SQLException ignored) {
+
+        }
+    }
+
+    public void unsetFlagState(Claim claim, Flag flag) {
+        try {
+            executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", claim.getId(), flag.getKey().toString());
         } catch (SQLException ignored) {
 
         }
@@ -545,6 +555,52 @@ public class Storage {
     public boolean removeGroupFromClaim(Claim claim, Group group) {
         try {
             executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ? AND GROUP_ID = ?", claim.getId(), group.getId());
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
+    public List<Flag> getFlags(Claim claim) {
+        try {
+            List<Flag> flags = new ArrayList<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
+            while (resultSet.next()) {
+                String flagIdentifier = resultSet.getString("FLAG_IDENTIFIER");
+                Flag flag = ClaimsApi.getApi().getFlag(NamespacedKey.fromString(flagIdentifier));
+                flags.add(flag);
+            }
+            resultSet.close();
+
+            return flags;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public Group getGroup(String name) {
+        try {
+            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE NAME = ?", name);
+            if (resultSet.next()) {
+                int id = resultSet.getInt("ID");
+                String groupName = resultSet.getString("NAME");
+                int maxClaims = resultSet.getInt("MAX_CLAIMS");
+                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
+                List<GroupMember> members = getGroupMembers(id);
+                resultSet.close();
+                return new StoredGroup(id, groupName, maxClaims, isPlayer, members);
+            }
+            resultSet.close();
+
+            return null;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public boolean renameGroup(Group group, String name) {
+        try {
+            executeUpdate("UPDATE GROUPS SET NAME = ? WHERE ID = ?", name, group.getId());
             return true;
         } catch (SQLException ignored) {
             return false;

@@ -3,6 +3,7 @@ package com.kalimero2.team.claims.paper;
 import com.kalimero2.team.claims.api.ClaimsApiHolder;
 import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import com.kalimero2.team.claims.paper.command.CommandManager;
+import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
 import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
 import com.kalimero2.team.claims.paper.storage.Storage;
@@ -30,6 +31,12 @@ public class PaperClaims extends JavaPlugin {
         storage = new Storage(this, new File(this.getDataFolder() + "/" + getConfig().getString("database")));
         api = new ClaimManager(this, storage);
         ClaimsApiHolder.setApi(api);
+
+        boolean ignored = ClaimsFlags.PVP.getDefaultState(); // This is just to make sure the class is loaded
+
+        api.getFlags().forEach(flag -> {
+            getLogger().info("Registered flag: " + flag.getKey().toString());
+        });
 
         getServer().getPluginManager().registerEvents(new ChunkProtectionListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerMoveListener(), this);

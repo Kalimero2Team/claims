@@ -1,20 +1,20 @@
 package com.kalimero2.team.claims.api.event;
 
-import com.kalimero2.team.claims.api.Claim;
+import com.kalimero2.team.claims.api.group.Group;
 import org.bukkit.Chunk;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public class ChunkClaimEvent extends Event {
+public class ChunkUnclaimedEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
     private final Chunk chunk;
-    private final Claim claim;
+    private final Group group;
 
-    public ChunkClaimEvent(Chunk chunk, Claim claim) {
+    public ChunkUnclaimedEvent(Chunk chunk, Group group) {
         this.chunk = chunk;
-        this.claim = claim;
+        this.group = group;
     }
 
     public static HandlerList getHandlerList() {
@@ -25,8 +25,8 @@ public class ChunkClaimEvent extends Event {
         return chunk;
     }
 
-    public Claim getClaim() {
-        return claim;
+    public Group getGroup() {
+        return group;
     }
 
     @Override

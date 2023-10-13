@@ -49,3 +49,40 @@ chunk:
   generic_fail_chunk_not_claimed: "<red>Fail</red> This chunk is not claimed"
   generic_fail_no_permission: "<red>Fail</red> You don't have permission to do this"
   paginated_list_footer: "<bold>Page <page> of <max_page> <prev><next></bold>"
+  flag_set_success: "<green>Success</green> Set flag <flag> to <state>"
+  flag_unset_success: "<green>Success</green> Unset flag <flag>"
+  flag_list_entry: "<flag>: <state>"
+
+group:
+  create:
+    success: "<green>Success</green> Group <name> created"
+    fail: "<red>Fail</red> Group <name> already exists"
+  delete:
+    success: "<green>Success</green> Group <name> deleted"
+    fail: "<red>Fail</red> Group <name> doesn't exist"
+  rename:
+    success: "<green>Success</green> Group <old_name> renamed to <new_name>"
+    fail: "<red>Fail</red> Group <old_name> doesn't exist"
+  member:
+    add:
+      success: "<green>Success</green> Added <target> to group <group>"
+      fail: "<red>Fail</red> <target> is already in group <group>"
+    remove:
+      success: "<green>Success</green> Removed <target> from group <group>"
+      fail: "<red>Fail</red> <target> is not in group <group>"
+      fail_to_remove_higher: "<red>Fail</red> You can't remove <target> from group <group> because they have a higher rank than you"
+      fail_to_remove_self: "<red>Fail</red> You can't remove yourself from group <group>"
+    list:
+      header: "<bold>Members of group <group>:</bold>"
+      entry: "<target> <level>"
+    promote:
+      success: "<green>Success</green> Promoted <target> to level <level>"
+      fail: "<red>Fail</red> <target> is already at level <level>"
+      fail_higher_level: "<red>Fail</red> You can't promote <target> to level <level> because they have a higher or equivalent rank than you"
+      fail_would_equal_or_exceed_own_level: "<red>Fail</red> You can't promote <target> to level <level> because it would equal or exceed your own level"
+      fail_to_promote_self: "<red>Fail</red> You can't promote yourself to level <level>"
+    demote:
+      success: "<green>Success</green> Demoted <target> to level <level>"
+      fail: "<red>Fail</red> <target> is already at level <level>"
+      fail_higher_level: "<red>Fail</red> You can't demote <target> to level <level> because they have a higher or equivalent rank than you"
+      fail_to_demote_self: "<red>Fail</red> You can't demote yourself to level <level>"

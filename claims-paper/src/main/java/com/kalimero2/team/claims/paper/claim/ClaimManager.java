@@ -2,6 +2,10 @@ package com.kalimero2.team.claims.paper.claim;
 
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
+import com.kalimero2.team.claims.api.event.ChunkClaimedEvent;
+import com.kalimero2.team.claims.api.event.ChunkUnclaimedEvent;
+import com.kalimero2.team.claims.api.event.flag.FlagSetEvent;
+import com.kalimero2.team.claims.api.event.flag.FlagUnsetEvent;
 import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
@@ -11,6 +15,7 @@ import com.kalimero2.team.claims.paper.storage.Storage;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -43,6 +48,16 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     @Override
+    public List<Flag> getFlags() {
+        return List.copyOf(registeredFlags.values());
+    }
+
+    @Override
+    public List<Flag> getFlags(Claim claim) {
+        return storage.getFlags(claim);
+    }
+
+    @Override
     public Flag getFlag(NamespacedKey key) {
         return registeredFlags.get(key);
     }
@@ -57,12 +72,32 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     @Override
-    public void setFlagState(Claim claim, Flag flag, boolean state) {
+    public boolean setFlagState(Claim claim, Flag flag, boolean state) {
         if (!registeredFlags.containsValue(flag)) {
             throw new IllegalArgumentException("Flag is not registered");
         }
 
-        storage.setFlagState(claim, flag, state);
+        FlagSetEvent event = new FlagSetEvent(claim, flag, state);
+        if (event.callEvent()) {
+            storage.setFlagState(claim, flag, state);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean unsetFlagState(Claim claim, Flag flag) {
+        if (!registeredFlags.containsValue(flag)) {
+            throw new IllegalArgumentException("Flag is not registered");
+        }
+        FlagUnsetEvent event = new FlagUnsetEvent(claim, flag);
+        if (event.callEvent()) {
+            storage.unsetFlagState(claim, flag);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -86,6 +121,11 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     @Override
+    public @Nullable Group getGroup(String name) {
+        return storage.getGroup(name);
+    }
+
+    @Override
     public List<Group> getGroups() {
         return storage.getGroups();
     }
@@ -97,12 +137,9 @@ public class ClaimManager implements ClaimsApi, Listener {
             if (storage.createPlayerGroup(player, 8)) {
                 playerGroup = storage.getPlayerGroup(player);
                 storage.addGroupMember(playerGroup, player, PermissionLevel.OWNER);
-            }else {
+            } else {
                 throw new IllegalStateException("Could not create player group");
             }
-        }
-        if(playerGroup == null){
-            throw new IllegalStateException("Could not create player group");
         }
         return playerGroup;
     }
@@ -137,14 +174,29 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean claimChunk(Chunk chunk, Group group) {
-        return storage.claimChunk(chunk, group);
+        boolean success = storage.claimChunk(chunk, group);
+
+        if (success) {
+            Claim claim = getClaim(chunk);
+            ChunkClaimedEvent event = new ChunkClaimedEvent(chunk, group, claim);
+
+            event.callEvent();
+        }
+
+        return success;
+
     }
 
     @Override
     public boolean unclaimChunk(Chunk chunk) {
         Claim claim = getClaim(chunk);
         if (claim != null) {
-            return storage.unclaimChunk(claim);
+            boolean unclaimed = storage.unclaimChunk(claim);
+            if (unclaimed) {
+                ChunkUnclaimedEvent event = new ChunkUnclaimedEvent(chunk, claim.getOwner());
+                event.callEvent();
+            }
+            return unclaimed;
         }
         return false;
     }
@@ -159,6 +211,24 @@ public class ClaimManager implements ClaimsApi, Listener {
         return storage.removeGroupFromClaim(claim, group);
     }
 
+    @Override
+    public @Nullable Group createGroup(OfflinePlayer owner, String name) {
+        boolean group = storage.createGroup(name, 16, false);
+        if (group) {
+            return storage.getGroup(name);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean deleteGroup(Group group) {
+        return storage.deleteGroup(group);
+    }
+
+    @Override
+    public boolean renameGroup(Group group, String name) {
+        return storage.renameGroup(group, name);
+    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -168,7 +238,6 @@ public class ClaimManager implements ClaimsApi, Listener {
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
         Claim claimData = storage.getClaimData(event.getChunk());
-
     }
 
     @EventHandler

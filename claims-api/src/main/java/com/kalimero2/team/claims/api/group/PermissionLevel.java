@@ -3,7 +3,7 @@ package com.kalimero2.team.claims.api.group;
 public enum PermissionLevel {
     MEMBER(0),
     MODERATOR(1),
-    ADMIN(2),
+    ADMIN(8),
     OWNER(9);
 
 
@@ -28,5 +28,31 @@ public enum PermissionLevel {
 
     public int getLevel() {
         return level;
+    }
+
+    public PermissionLevel next() {
+        int level = getLevel();
+
+        level++;
+        if(level > 9) {
+            return this;
+        }
+        while (fromLevel(level) == null) {
+            level++;
+        }
+
+        return fromLevel(level);
+    }
+
+    public PermissionLevel previous() {
+        int level = getLevel();
+        level--;
+        if(level < 0) {
+            return this;
+        }
+        while (fromLevel(level) == null) {
+            level--;
+        }
+        return fromLevel(level);
     }
 }

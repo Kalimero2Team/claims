@@ -20,8 +20,8 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public class BaseChunkCommands extends CommandHandler {
-    public BaseChunkCommands(CommandManager commandManager) {
+public class ChunkBaseCommands extends CommandHandler {
+    public ChunkBaseCommands(CommandManager commandManager) {
         super(commandManager);
     }
 

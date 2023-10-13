@@ -1,5 +1,5 @@
 chunk:
-  info: '<bold>Informationen zu diesem Chunk</bold> [X: <chunk_x> | Z: <chunk_z>]:'
+  info: '<bold>Informationen zum Chunk</bold> [X: <chunk_x> | Z: <chunk_z>]:'
   claimed_true: 'Beansprucht: <bold><green>Ja</green></bold>'
   claimed_false: 'Beansprucht: <bold><red>Nein</red></bold>'
   claim_owner: 'Besitzer: <bold><player></bold>'
@@ -48,3 +48,40 @@ chunk:
   generic_fail_chunk_not_claimed: "<red>Dieser Chunk ist nicht geclaimed</red>"
   generic_fail_no_permission: "<red>Du hast keine Berechtigung für diese Aktion</red>"
   paginated_list_footer: "<bold>Seite <page> von <max_page> <prev><next></bold>"
+  flag_set_success: "<green>Flag <flag> wurde auf <state> gesetzt</green>"
+  flag_unset_success: "<green>Flag <flag> wurde zurückgesetzt</green>"
+  flag_list_entry: "<flag>: <state>"
+
+group:
+  create:
+    success: "<green>Gruppe <name> wurde erstellt</green>"
+    fail: "<red>Gruppe <name> existiert bereits</red>"
+  delete:
+    success: "<green>Gruppe <name> wurde gelöscht</green>"
+    fail: "<red>Gruppe <name> existiert nicht</red>"
+  rename:
+    success: "<green>Gruppe <old_name> wurde in <new_name> umbenannt</green>"
+    fail: "<red>Gruppe <old_name> existiert nicht</red>"
+  member:
+    add:
+      success: "<green><player> wurde zu <group> hinzugefügt</green>"
+      fail: "<red><player> ist bereits in <group></red>"
+    remove:
+      success: "<green><player> wurde aus <group> entfernt</green>"
+      fail: "<red><player> ist nicht in <group></red>"
+      fail_to_remove_higher: "<red>Du kannst <player> nicht aus <group> entfernen, da er einen höheren Rang als du hat</red>"
+      fail_to_remove_self: "<red>Du kannst dich nicht selbst aus <group> entfernen</red>"
+    list:
+      header: "<bold>Mitglieder von <group>:</bold>"
+      entry: "<player> <level>"
+    promote:
+      success: "<green><player> wurde zu <level> befördert</green>"
+      fail: "<red><player> ist bereits in der <level> Gruppe</red>"
+      fail_higher_level: "<red>Du kannst <player> nicht zu <level> befördern, da dieser einen höheren oder equivalenten Rang als du hat</red>"
+      fail_would_equal_or_exceed_own_level: "<red>Du kannst <player> nicht zu <level> befördern, da es deinem eigenen Rang entspricht oder ihn übersteigt</red>"
+      fail_to_promote_self: "<red>Du kannst dich nicht selbst befördern</red>"
+    demote:
+      success: "<green><player> wurde zu <level> degradiert</green>"
+      fail: "<red><player> hat bereits <level> in der Gruppe</red>"
+      fail_higher_level: "<red>Du kannst <player> nicht zu <level> degradieren, da dieser einen höheren oder equivalenten Rang als du hat</red>"
+      fail_to_promote_self: "<red>Du kannst dich nicht selbst degradieren</red>"

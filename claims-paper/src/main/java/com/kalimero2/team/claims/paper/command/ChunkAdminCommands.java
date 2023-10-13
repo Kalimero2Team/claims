@@ -5,7 +5,11 @@ import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.Chunk;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -73,8 +77,58 @@ public class ChunkAdminCommands extends CommandHandler {
     private void listClaimsOther(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
             Group target = context.get("target");
-
             List<Claim> claims = api.getClaims(target);
+
+            boolean hasClaims = !claims.isEmpty();
+            boolean needsPagination = claims.size() > 10;
+
+            if (!hasClaims) {
+                messageUtil.sendMessage(player, "chunk.list_empty");
+                return;
+            }
+
+            int page = context.getOrDefault("page", 1);
+            int maxPage = (int) Math.ceil(claims.size() / 10.0);
+            if (page > maxPage) {
+                page = maxPage;
+            }
+            if (page < 1) {
+                page = 1;
+            }
+            int start = (page - 1) * 10;
+            int end = Math.min(start + 10, claims.size());
+            claims = claims.subList(start, end);
+
+            messageUtil.sendMessage(player, "chunk.list_start_other", Placeholder.unparsed("target", target.getName()));
+            for (Claim claim : claims) {
+                Chunk chunk = claim.getChunk();
+                Block block = chunk.getBlock(0, 0, 0);
+                messageUtil.sendMessage(player, "chunk.list_entry",
+                        Placeholder.component("x", Component.text(block.getX())),
+                        Placeholder.component("z", Component.text(block.getZ())),
+                        Placeholder.component("chunk_x", Component.text(chunk.getX())),
+                        Placeholder.component("chunk_z", Component.text(chunk.getZ()))
+                );
+            }
+
+            if (needsPagination) {
+                Component nextPage = Component.text("");
+                Component prevPage = Component.text("");
+
+                if (page < maxPage) {
+                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/chunk admin listother " + target.getName() + " " + (page + 1)));
+                }
+                if (page > 1) {
+                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/chunk admin listother "+ target.getName()  + " " + (page - 1)));
+                }
+                messageUtil.sendMessage(player, "chunk.paginated_list_footer",
+                        Placeholder.unparsed("page", String.valueOf(page)),
+                        Placeholder.unparsed("max_page", String.valueOf(maxPage)),
+                        Placeholder.component("next", nextPage),
+                        Placeholder.component("prev", prevPage)
+                );
+
+            }
         }
     }
 

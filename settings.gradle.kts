@@ -11,12 +11,16 @@ dependencyResolutionManagement{
 
             // Paper
             plugin("paper-run","xyz.jpenilla.run-paper").version("2.2.0")
-            plugin("paper-userdev","io.papermc.paperweight.userdev").version("1.5.6")
-            plugin("plugin-yml","net.minecrell.plugin-yml.bukkit").version("0.5.3")
+            plugin("paper-userdev","io.papermc.paperweight.userdev").version("1.5.8")
+            plugin("plugin-yml","net.minecrell.plugin-yml.bukkit").version("0.6.0")
 
-            version("paper-api","1.20.1-R0.1-SNAPSHOT")
+            library("paper-api","io.papermc.paper","paper-api").version("1.20.1-R0.1-SNAPSHOT")
 
             library("cloud-paper","cloud.commandframework","cloud-paper").versionRef("cloud")
+
+            // SquareMap Integration
+
+            library("squaremap-api","xyz.jpenilla","squaremap-api").version("1.2.1")
         }
     }
 }
@@ -31,3 +35,4 @@ pluginManagement {
 rootProject.name = "claims"
 include("claims-api")
 include("claims-paper")
+include("claims-squaremap-integration")

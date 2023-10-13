@@ -34,11 +34,13 @@ public class CommandManager extends PaperCommandManager<CommandSender> {
             this.registerAsynchronousCompletions();
         }
 
-        new BaseChunkCommands(this).register();
+        new ChunkBaseCommands(this).register();
         new ChunkAdminCommands(this).register();
         new ChunkBorderCommand(this).register();
         new ChunkTrustCommands(this).register();
+        new ChunkFlagCommands(this).register();
         new ChunkIgnoredInteractablesCommands(this).register();
+        new GroupCommands(this).register();
 
     }
 

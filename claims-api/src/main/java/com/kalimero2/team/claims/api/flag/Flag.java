@@ -28,6 +28,10 @@ public final class Flag {
         return key;
     }
 
+    public String getKeyString() {
+        return key.toString().replace("claims:", ""); // Remove the default namespace
+    }
+
     public boolean getDefaultState() {
         return defaultState;
     }

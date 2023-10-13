@@ -2,7 +2,6 @@ import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
 plugins {
     alias(libs.plugins.paper.run)
-    alias(libs.plugins.paper.userdev)
     alias(libs.plugins.plugin.yml)
     alias(libs.plugins.shadow)
 }
@@ -15,18 +14,17 @@ repositories {
 }
 
 dependencies {
-    paperDevBundle(libs.versions.paper.api.get())
+    compileOnly(libs.paper.api)
     bukkitLibrary(libs.cloud.paper)
     implementation(project(":claims-api"))
 }
 
 tasks{
-    assemble {
-        dependsOn(reobfJar)
-    }
-
     shadowJar{
         fun reloc(pkg: String, name: String) = relocate(pkg, "com.kalimero2.team.claims.paper.shaded.$name")
+    }
+    runServer{
+        minecraftVersion("1.20.1")
     }
 }
 

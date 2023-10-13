@@ -1,12 +1,18 @@
 # claims
 
 TODO:
-- [ ] Rewrite Message System
+- API
+  - [ ] Add Cancelable Claim/Unclaim events, currently only "ListenOnly" events are available
 
 
-Libraries used:
-- [Paper API](https://github.com/PaperMC/Paper)
-- [Floodgate](https://github.com/GeyserMC/Floodgate)
-- [Cloud Command Framework](https://github.com/Incendo/cloud)
-- [MorePersistentDataTypes](https://github.com/JEFF-Media-GbR/MorePersistentDataTypes)
-- [CustomBlockData](https://github.com/JEFF-Media-GbR/CustomBlockData)
+# API
+
+```groovy
+repositories {
+  maven("https://repo.kalimero2.com/releases")
+}
+
+dependencies {
+  implementation("com.kalimero2:claims-api:2.0.0")
+}
+```

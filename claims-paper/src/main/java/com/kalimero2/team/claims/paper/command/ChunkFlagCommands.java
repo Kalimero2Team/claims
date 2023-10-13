@@ -1,0 +1,119 @@
+package com.kalimero2.team.claims.paper.command;
+
+import cloud.commandframework.arguments.standard.BooleanArgument;
+import cloud.commandframework.context.CommandContext;
+import com.kalimero2.team.claims.api.Claim;
+import com.kalimero2.team.claims.api.flag.Flag;
+import com.kalimero2.team.claims.api.group.Group;
+import com.kalimero2.team.claims.api.group.GroupMember;
+import com.kalimero2.team.claims.api.group.PermissionLevel;
+import com.kalimero2.team.claims.paper.command.argument.FlagArgument;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.List;
+
+public class ChunkFlagCommands extends CommandHandler {
+    protected ChunkFlagCommands(CommandManager commandManager) {
+        super(commandManager);
+    }
+
+    @Override
+    public void register() {
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("flag")
+                        .literal("set")
+                        .argument(FlagArgument.of("flag"))
+                        .argument(BooleanArgument.of("state"))
+                        .handler(this::flagSet)
+        );
+
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("flag")
+                        .literal("unset")
+                        .argument(FlagArgument.of("flag"))
+                        .handler(this::flagUnset)
+        );
+
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("flag")
+                        .literal("list")
+                        .handler(this::flagList)
+        );
+    }
+
+    private void flagList(CommandContext<CommandSender> context) {
+        if (context.getSender() instanceof Player player) {
+            Claim claim = api.getClaim(player.getChunk());
+
+            if (claim != null) {
+                List<Flag> flags = api.getFlags(claim);
+                flags.forEach(flag -> {
+                    boolean state = api.getFlagState(claim, flag);
+                    plugin.getMessageUtil().sendMessage(player, "chunk.flag_list_entry", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
+                });
+            }else {
+                plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_chunk_not_claimed");
+            }
+        }
+    }
+
+    private void flagSet(CommandContext<CommandSender> context) {
+        Flag flag = context.get("flag");
+
+        if (flag.isAdminOnly() && !context.getSender().hasPermission("claims.admin.flag")) {
+            context.getSender().sendMessage("You don't have permission to set this flag");
+            return;
+        }
+
+        if (context.getSender() instanceof Player player) {
+            Claim claim = api.getClaim(player.getChunk());
+
+            if (claim != null) {
+                Group group = claim.getOwner();
+                GroupMember groupMember = api.getGroupMember(group, player);
+                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
+                    boolean state = context.get("state");
+                    api.setFlagState(claim, flag, state);
+                    plugin.getMessageUtil().sendMessage(player, "chunk.flag_set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
+                } else {
+                    plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");
+                }
+            } else {
+                plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_chunk_not_claimed");
+            }
+        }
+
+    }
+
+
+    private void flagUnset(CommandContext<CommandSender> context) {
+        Flag flag = context.get("flag");
+
+        if (flag.isAdminOnly() && !context.getSender().hasPermission("claims.admin.flag")) {
+            context.getSender().sendMessage("You don't have permission to set this flag");
+            return;
+        }
+
+        if (context.getSender() instanceof Player player) {
+            Claim claim = api.getClaim(player.getChunk());
+
+            if (claim != null) {
+                Group group = claim.getOwner();
+                GroupMember groupMember = api.getGroupMember(group, player);
+                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
+                    api.unsetFlagState(claim, flag);
+                    plugin.getMessageUtil().sendMessage(player, "chunk.flag_unset_success", Placeholder.unparsed("flag", flag.getKeyString()));
+                } else {
+                    plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");
+                }
+            } else {
+                plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_chunk_not_claimed");
+            }
+        }
+    }
+}

@@ -30,7 +30,7 @@ public class ChunkIgnoredInteractablesCommands extends CommandHandler {
                     List<String> suggestions = new ArrayList<>();
                     for (Material value : Material.values()) {
                         if (value.isInteractable()) {
-                            suggestions.add(value.name());
+                            suggestions.add(value.name().toLowerCase());
                         }
                     }
                     return suggestions;
@@ -42,7 +42,7 @@ public class ChunkIgnoredInteractablesCommands extends CommandHandler {
                     List<String> suggestions = new ArrayList<>();
                     for (EntityType value : EntityType.values()) {
                         if (value.isAlive()) {
-                            suggestions.add(value.getKey().toString());
+                            suggestions.add(value.getKey().toString().replace("minecraft:", ""));
                         }
                     }
                     return suggestions;
@@ -125,12 +125,12 @@ public class ChunkIgnoredInteractablesCommands extends CommandHandler {
                         return;
                     }
                     if (claim.getBlockInteractables().stream().map(BlockInteractable::getBlockMaterial).toList().contains(material)) {
-                        plugin.getMessageUtil().sendMessage(player, "chunk.material_already_added", Placeholder.unparsed("material", material.name()));
+                        plugin.getMessageUtil().sendMessage(player, "chunk.material_already_added", Placeholder.unparsed("material", material.name().toLowerCase()));
                         return;
                     }
                     // TODO: Add addBlockInteractable method to api
                     // api.addBlockInteractable(claim, material);
-                    plugin.getMessageUtil().sendMessage(player, "chunk.material_added", Placeholder.unparsed("material", material.name()));
+                    plugin.getMessageUtil().sendMessage(player, "chunk.material_added", Placeholder.unparsed("material", material.name().toLowerCase()));
                 } else {
                     plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");
                 }
@@ -153,9 +153,9 @@ public class ChunkIgnoredInteractablesCommands extends CommandHandler {
                         // TODO: Add removeBlockInteractable method to api
                         // api.removeBlockInteractable(claim, material);
 
-                        plugin.getMessageUtil().sendMessage(player, "chunk.material_removed", Placeholder.unparsed("material", material.name()));
+                        plugin.getMessageUtil().sendMessage(player, "chunk.material_removed", Placeholder.unparsed("material", material.name().toLowerCase()));
                     } else {
-                        plugin.getMessageUtil().sendMessage(player, "chunk.material_not_added", Placeholder.unparsed("material", material.name()));
+                        plugin.getMessageUtil().sendMessage(player, "chunk.material_not_added", Placeholder.unparsed("material", material.name().toLowerCase()));
                     }
                 }else {
                     plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");

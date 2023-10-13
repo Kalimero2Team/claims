@@ -4,6 +4,7 @@ import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
@@ -32,6 +33,19 @@ public interface ClaimsApi {
     void unregisterFlag(Flag flag);
 
     /**
+     * Gets all registered {@link Flag}s
+     * @return all registered flags
+     */
+    List<Flag> getFlags();
+
+    /**
+     * Gets all set {@link Flag}s of a {@link Claim}
+     * @param claim the claim to get the flags from
+     * @return all flags of the claim
+     */
+    List<Flag> getFlags(Claim claim);
+
+    /**
      * Gets a {@link Flag} by its {@link NamespacedKey}
      *
      * @param key the NamespacedKey of the flag
@@ -54,8 +68,17 @@ public interface ClaimsApi {
      * @param claim the claim to set the flag state from
      * @param flag  the flag to set the state from
      * @param state the state of the flag
+     * @return true if successful, false otherwise
      */
-    void setFlagState(Claim claim, Flag flag, boolean state);
+    boolean setFlagState(Claim claim, Flag flag, boolean state);
+
+    /**
+     * Unsets the state of a flag in a claim
+     * @param claim the claim to unset the flag state from
+     * @param flag the flag to unset the state from
+     * @return true if successful, false otherwise
+     */
+    boolean unsetFlagState(Claim claim, Flag flag);
 
     /**
      * Checks if a chunk is claimed
@@ -114,6 +137,14 @@ public interface ClaimsApi {
     @Nullable Group getGroup(int id);
 
     /**
+     * Get a group by its name
+     *
+     * @param name the name of the group
+     * @return the group or null if not found
+     */
+    @Nullable Group getGroup(String name);
+
+    /**
      * Get all groups
      *
      * @return all groups
@@ -155,7 +186,7 @@ public interface ClaimsApi {
      * @param player the player to add to the group
      * @return the group member or null if failed
      * @see #addGroupMember(Group, OfflinePlayer, PermissionLevel) to add a player with a specific permission level
-     * @see #setPermissionLevel(GroupMember, PermissionLevel) to change the permission level of a member
+     * @see #setPermissionLevel(Group, GroupMember, PermissionLevel) to change the permission level of a member
      */
     default @Nullable GroupMember addGroupMember(Group group, OfflinePlayer player) {
         return addGroupMember(group, player, PermissionLevel.MEMBER);
@@ -248,6 +279,32 @@ public interface ClaimsApi {
     default boolean removePlayerFromClaim(Claim claim, OfflinePlayer player) {
         return removeGroupFromClaim(claim, getPlayerGroup(player));
     }
+
+    /**
+     * Create a new group
+     *
+     * @param player the group to create
+     * @param name the name of the group
+     * @return the new group or null if failed
+     */
+    @Nullable Group createGroup(OfflinePlayer player, String name);
+
+    /**
+     * Delete a group
+     *
+     * @param group the group to delete
+     * @return true if successful, false otherwise
+     */
+    boolean deleteGroup(Group group);
+
+    /**
+     * Rename a group
+     *
+     * @param group the group to rename
+     * @param name the new name of the group
+     * @return true if successful, false otherwise
+     */
+    boolean renameGroup(Group group, String name);
 
 
 }
