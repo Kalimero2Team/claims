@@ -7,6 +7,7 @@ import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Chunk;
 import org.bukkit.block.Block;
@@ -83,7 +84,7 @@ public class ChunkAdminCommands extends CommandHandler {
             boolean needsPagination = claims.size() > 10;
 
             if (!hasClaims) {
-                messageUtil.sendMessage(player, "chunk.list_empty");
+                messageUtil.sendMessage(player, "chunk.list.empty_other", Placeholder.unparsed("target", target.getName()));
                 return;
             }
 
@@ -99,16 +100,19 @@ public class ChunkAdminCommands extends CommandHandler {
             int end = Math.min(start + 10, claims.size());
             claims = claims.subList(start, end);
 
-            messageUtil.sendMessage(player, "chunk.list_start_other", Placeholder.unparsed("target", target.getName()));
+            messageUtil.sendMessage(player, "chunk.list.header_other", Placeholder.unparsed("target", target.getName()));
             for (Claim claim : claims) {
                 Chunk chunk = claim.getChunk();
                 Block block = chunk.getBlock(0, 0, 0);
-                messageUtil.sendMessage(player, "chunk.list_entry",
-                        Placeholder.component("x", Component.text(block.getX())),
-                        Placeholder.component("z", Component.text(block.getZ())),
-                        Placeholder.component("chunk_x", Component.text(chunk.getX())),
-                        Placeholder.component("chunk_z", Component.text(chunk.getZ()))
-                );
+                Component message = messageUtil.getMessage("chunk.list.entry",
+                                Placeholder.component("x", Component.text(block.getX())),
+                                Placeholder.component("z", Component.text(block.getZ())),
+                                Placeholder.component("chunk_x", Component.text(chunk.getX())),
+                                Placeholder.component("chunk_z", Component.text(chunk.getZ())));
+
+                message = message.clickEvent(ClickEvent.runCommand("/tp " + block.getX() + " 100 " + block.getZ())); // TODO: Get highest block at x z
+                message = message.hoverEvent(HoverEvent.showText(messageUtil.getMessage("chunk.list.tp_hover")));
+                player.sendMessage(message);
             }
 
             if (needsPagination) {
@@ -119,9 +123,9 @@ public class ChunkAdminCommands extends CommandHandler {
                     nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/chunk admin listother " + target.getName() + " " + (page + 1)));
                 }
                 if (page > 1) {
-                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/chunk admin listother "+ target.getName()  + " " + (page - 1)));
+                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/chunk admin listother " + target.getName() + " " + (page - 1)));
                 }
-                messageUtil.sendMessage(player, "chunk.paginated_list_footer",
+                messageUtil.sendMessage(player, "chunk.list.footer",
                         Placeholder.unparsed("page", String.valueOf(page)),
                         Placeholder.unparsed("max_page", String.valueOf(maxPage)),
                         Placeholder.component("next", nextPage),
@@ -139,22 +143,26 @@ public class ChunkAdminCommands extends CommandHandler {
                 Group target = context.get("target");
                 // TODO: Add setOwner method to api
                 // api.setOwner(player.getChunk(), target);
-                plugin.getMessageUtil().sendMessage(player, "chunk.set_owner", Placeholder.unparsed("target", target.toString()));
+                plugin.getMessageUtil().sendMessage(player, "chunk.admin.set_owner", Placeholder.unparsed("target", target.toString()));
             } else {
-                plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_chunk_not_claimed");
+                plugin.getMessageUtil().sendMessage(player, "chunk.generic.fail_chunk_not_claimed");
             }
         }
     }
 
     private void addToLimit(CommandContext<CommandSender> context) {
         Group target = context.get("target");
+        int oldLimit = target.getMaxClaims();
         int limit = context.get("limit");
 
         int maxClaims = target.getMaxClaims();
         api.setMaxClaims(target, maxClaims + limit);
 
-        // TODO: Add Old Limit
-        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.add_claims", Placeholder.unparsed("count", String.valueOf(limit)), Placeholder.unparsed("target", target.getName()));
+        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.admin.limit.add",
+                Placeholder.unparsed("count", String.valueOf(limit)),
+                Placeholder.unparsed("old_count", String.valueOf(oldLimit)),
+                Placeholder.unparsed("target", target.getName())
+        );
     }
 
     private void getLimit(CommandContext<CommandSender> context) {
@@ -162,16 +170,23 @@ public class ChunkAdminCommands extends CommandHandler {
 
         int maxClaims = target.getMaxClaims();
 
-        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.get_claims", Placeholder.unparsed("count", String.valueOf(maxClaims)), Placeholder.unparsed("target", target.getName()));
+        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.admin.limit.get",
+                Placeholder.unparsed("count", String.valueOf(maxClaims)),
+                Placeholder.unparsed("target", target.getName())
+        );
     }
 
     private void setLimit(CommandContext<CommandSender> context) {
         Group target = context.get("target");
+        int oldLimit = target.getMaxClaims();
         int limit = context.get("limit");
 
         api.setMaxClaims(target, limit);
 
-        // TODO: Add Old Limit
-        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.set_claims", Placeholder.unparsed("count", String.valueOf(limit)), Placeholder.unparsed("target", target.getName()));
+        plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.admin.limit.set",
+                Placeholder.unparsed("count", String.valueOf(limit)),
+                Placeholder.unparsed("old_count", String.valueOf(oldLimit)),
+                Placeholder.unparsed("target", target.getName())
+        );
     }
 }

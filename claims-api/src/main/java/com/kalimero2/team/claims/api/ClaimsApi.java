@@ -4,10 +4,11 @@ import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Chunk;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -305,6 +306,43 @@ public interface ClaimsApi {
      * @return true if successful, false otherwise
      */
     boolean renameGroup(Group group, String name);
+
+
+    /**
+     * Sets if all players can interact with a block in a claim
+     *
+     * @param claim the claim to set the interactable state
+     * @param material the material of the interactable block
+     * @param state the state if all players can interact with the block
+     */
+    void setBlockInteractable(Claim claim, Material material, boolean state);
+
+    /**
+     * Sets if all players can interact with an entity in a claim
+     *
+     * @param claim the claim to set the interactable state
+     * @param entityType the entity type of the interactable entity
+     * @param damage if all players can damage the entity
+     * @param interact if all players can interact with the entity
+     */
+    void setEntityInteractable(Claim claim, EntityType entityType, boolean damage, boolean interact);
+
+    /**
+     * Removes the interactive state from a block
+     *
+     * @param claim the claim to remove the interactable state
+     * @param material the material of the interactable block
+     */
+    void removeBlockInteractable(Claim claim, Material material);
+
+    /**
+     * Removes the interactive states from an entity
+     *
+     * @param claim the claim to remove the interactable state
+     * @param entityType the entity type of the interactable entity
+     */
+    void removeEntityInteractable(Claim claim, EntityType entityType);
+
 
 
 }

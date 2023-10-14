@@ -12,6 +12,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ChunkFlagCommands extends CommandHandler {
@@ -34,7 +35,23 @@ public class ChunkFlagCommands extends CommandHandler {
                 commandManager.commandBuilder("chunk")
                         .literal("flag")
                         .literal("unset")
-                        .argument(FlagArgument.of("flag"))
+                        .argument(FlagArgument.<CommandSender>builder("flag")
+                                .withSuggestionsProvider((context, s) -> {
+                                            if (context.getSender() instanceof Player player) {
+                                                Claim claim = api.getClaim(player.getChunk());
+                                                if (claim != null) {
+                                                    List<Flag> flags = api.getFlags(claim);
+                                                    List<String> suggestions = new ArrayList<>();
+                                                    for (Flag flag : flags) {
+                                                        suggestions.add(flag.getKeyString());
+                                                    }
+                                                    return suggestions;
+                                                }
+                                            }
+                                            return List.of();
+                                        }
+                                )
+                                .build())
                         .handler(this::flagUnset)
         );
 
@@ -52,12 +69,19 @@ public class ChunkFlagCommands extends CommandHandler {
 
             if (claim != null) {
                 List<Flag> flags = api.getFlags(claim);
+                if(flags.isEmpty()) {
+                    messageUtil.sendMessage(player, "chunk.flag.list.empty");
+                    return;
+                }
                 flags.forEach(flag -> {
                     boolean state = api.getFlagState(claim, flag);
-                    plugin.getMessageUtil().sendMessage(player, "chunk.flag_list_entry", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
+                    messageUtil.sendMessage(player, "chunk.flag.list.entry",
+                            Placeholder.unparsed("flag", flag.getKeyString()),
+                            Placeholder.unparsed("state", String.valueOf(state))
+                    );
                 });
-            }else {
-                plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_chunk_not_claimed");
+            } else {
+                messageUtil.sendMessage(player, "chunk.generic.fail_chunk_not_claimed");
             }
         }
     }
@@ -66,7 +90,7 @@ public class ChunkFlagCommands extends CommandHandler {
         Flag flag = context.get("flag");
 
         if (flag.isAdminOnly() && !context.getSender().hasPermission("claims.admin.flag")) {
-            context.getSender().sendMessage("You don't have permission to set this flag");
+            messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
             return;
         }
 
@@ -79,12 +103,12 @@ public class ChunkFlagCommands extends CommandHandler {
                 if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
                     boolean state = context.get("state");
                     api.setFlagState(claim, flag, state);
-                    plugin.getMessageUtil().sendMessage(player, "chunk.flag_set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
+                    messageUtil.sendMessage(player, "chunk.flag.set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
                 } else {
-                    plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");
+                    messageUtil.sendMessage(player, "chunk.generic.fail_no_permission");
                 }
             } else {
-                plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_chunk_not_claimed");
+                messageUtil.sendMessage(player, "chunk.generic.fail_chunk_not_claimed");
             }
         }
 
@@ -95,7 +119,7 @@ public class ChunkFlagCommands extends CommandHandler {
         Flag flag = context.get("flag");
 
         if (flag.isAdminOnly() && !context.getSender().hasPermission("claims.admin.flag")) {
-            context.getSender().sendMessage("You don't have permission to set this flag");
+            messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
             return;
         }
 
@@ -107,12 +131,12 @@ public class ChunkFlagCommands extends CommandHandler {
                 GroupMember groupMember = api.getGroupMember(group, player);
                 if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
                     api.unsetFlagState(claim, flag);
-                    plugin.getMessageUtil().sendMessage(player, "chunk.flag_unset_success", Placeholder.unparsed("flag", flag.getKeyString()));
+                    messageUtil.sendMessage(player, "chunk.flag.unset_success", Placeholder.unparsed("flag", flag.getKeyString()));
                 } else {
-                    plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_no_permission");
+                    messageUtil.sendMessage(player, "chunk.generic.fail_no_permission");
                 }
             } else {
-                plugin.getMessageUtil().sendMessage(player, "chunk.generic_fail_chunk_not_claimed");
+                messageUtil.sendMessage(player, "chunk.generic.fail_chunk_not_claimed");
             }
         }
     }

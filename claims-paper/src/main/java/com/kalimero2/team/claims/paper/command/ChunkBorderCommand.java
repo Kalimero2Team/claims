@@ -13,11 +13,6 @@ public class ChunkBorderCommand extends CommandHandler {
     @Override
     public void register() {
         commandManager.command(
-                commandManager.commandBuilder("chunk")
-                        .literal("border")
-                        .handler(this::toggleBorder)
-        );
-        commandManager.command(
                 commandManager.commandBuilder("cb", "chunkborder")
                         .handler(this::toggleBorder)
         );
@@ -27,10 +22,10 @@ public class ChunkBorderCommand extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             if (ChunkBorders.show_border.contains(player)) {
                 ChunkBorders.show_border.remove(player);
-                plugin.getMessageUtil().sendMessage(player, "chunk.border_off");
+                plugin.getMessageUtil().sendMessage(player, "chunkborder.off");
             } else {
                 ChunkBorders.show_border.add(player);
-                plugin.getMessageUtil().sendMessage(player, "chunk.border_on");
+                plugin.getMessageUtil().sendMessage(player, "chunkborder.on");
             }
         }
     }

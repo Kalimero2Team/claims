@@ -6,6 +6,7 @@ import com.kalimero2.team.claims.api.event.ChunkClaimedEvent;
 import com.kalimero2.team.claims.api.event.ChunkUnclaimedEvent;
 import com.kalimero2.team.claims.api.event.flag.FlagSetEvent;
 import com.kalimero2.team.claims.api.event.flag.FlagUnsetEvent;
+import com.kalimero2.team.claims.api.event.group.GroupMemberPermissionLevelChangeEvent;
 import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
@@ -13,8 +14,10 @@ import com.kalimero2.team.claims.api.group.PermissionLevel;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.storage.Storage;
 import org.bukkit.Chunk;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -30,11 +33,13 @@ import java.util.List;
 public class ClaimManager implements ClaimsApi, Listener {
 
     private final Storage storage;
+    private final PaperClaims plugin;
     private final HashMap<NamespacedKey, Flag> registeredFlags = new HashMap<>();
 
     public ClaimManager(PaperClaims plugin, Storage storage) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         this.storage = storage;
+        this.plugin = plugin;
     }
 
     @Override
@@ -151,7 +156,12 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean setPermissionLevel(Group group, GroupMember member, PermissionLevel level) {
-        return storage.setPermissionLevel(group, member, level);
+        GroupMemberPermissionLevelChangeEvent groupMemberPermissionLevelChangeEvent = new GroupMemberPermissionLevelChangeEvent(group, member, member.getPermissionLevel(), level);
+
+        if(groupMemberPermissionLevelChangeEvent.callEvent()){
+            return storage.setPermissionLevel(group, member, level);
+        }
+        return false;
     }
 
     @Override
@@ -222,12 +232,38 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean deleteGroup(Group group) {
+        List<Claim> claims = getClaims(group);
+        for (Claim claim : claims) {
+            unclaimChunk(claim.getChunk());
+            plugin.getLogger().info("Unclaimed chunk " + claim.getChunk().getX() + " " + claim.getChunk().getZ() + " because group " + group.getName() + " was deleted");
+        }
+
         return storage.deleteGroup(group);
     }
 
     @Override
     public boolean renameGroup(Group group, String name) {
         return storage.renameGroup(group, name);
+    }
+
+    @Override
+    public void setBlockInteractable(Claim claim, Material material, boolean state) {
+        storage.setBlockInteractable(claim, material, state);
+    }
+
+    @Override
+    public void setEntityInteractable(Claim claim, EntityType entityType, boolean damage, boolean interact) {
+        storage.setEntityInteractable(claim, entityType, damage, interact);
+    }
+
+    @Override
+    public void removeBlockInteractable(Claim claim, Material material) {
+        storage.removeBlockInteractable(claim, material);
+    }
+
+    @Override
+    public void removeEntityInteractable(Claim claim, EntityType entityType) {
+        storage.removeEntityInteractable(claim, entityType);
     }
 
     @EventHandler
@@ -242,5 +278,6 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
+
     }
 }

@@ -2,8 +2,11 @@ package com.kalimero2.team.claims.paper.listener;
 
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
+import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.interactable.BlockInteractable;
+import com.kalimero2.team.claims.api.interactable.EntityInteractable;
+import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import org.bukkit.Chunk;
@@ -17,6 +20,7 @@ import org.bukkit.entity.Boat;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.NPC;
@@ -24,7 +28,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Ravager;
 import org.bukkit.entity.Steerable;
-import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.Wither;
@@ -34,6 +37,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockFertilizeEvent;
 import org.bukkit.event.block.BlockFromToEvent;
@@ -45,7 +49,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
@@ -71,8 +74,8 @@ public class ChunkProtectionListener implements Listener {
 
     private final ClaimsApi api;
 
-    public ChunkProtectionListener() {
-        this.api = ClaimsApi.getApi();
+    public ChunkProtectionListener(ClaimsApi api) {
+        this.api = api;
     }
 
     private boolean shouldCancel(Player player, Chunk bukkitChunk) {
@@ -145,6 +148,13 @@ public class ChunkProtectionListener implements Listener {
     }
 
     @EventHandler
+    public void onBlockDamage(BlockDamageEvent event) {
+        if (shouldCancel(event.getPlayer(), event.getBlock().getChunk())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Claim claim = api.getClaim(event.getBlock().getChunk());
         if (shouldCancel(event.getPlayer(), claim)) {
@@ -162,11 +172,7 @@ public class ChunkProtectionListener implements Listener {
         }
     }
 
-    @EventHandler
-    public void onEntityExplode(EntityExplodeEvent event) {
-        // TODO: Explosion Flag
-        event.setCancelled(true);
-    }
+
 
     @EventHandler
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
@@ -226,10 +232,40 @@ public class ChunkProtectionListener implements Listener {
     }
 
     private void onEntityDamageByPlayer(EntityDamageByEntityEvent event, Player player) {
-        if (event.getEntity() instanceof Player || event.getEntity() instanceof Monster) {
+        Entity target = event.getEntity();
+        Claim claim = api.getClaim(target.getChunk());
+
+        // Chunk EntityInteractables overrides
+        List<EntityType> damageAllowed = List.of();
+        List<EntityType> damageDenied = List.of();
+
+        if (claim != null) {
+            List<EntityInteractable> entityInteractables = claim.getEntityInteractables();
+            damageAllowed = entityInteractables.stream().filter(EntityInteractable::isDamage).map(EntityInteractable::getEntityType).toList();
+            damageDenied = entityInteractables.stream().filter(entityInteractable -> !entityInteractable.isDamage()).map(EntityInteractable::getEntityType).toList();
+        }
+
+        if (damageDenied.contains(target.getType())) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (damageAllowed.contains(target.getType())) {
             event.setCancelled(false);
-        } else if (event.getEntity() instanceof Animals || event.getEntity() instanceof Tameable || event.getEntity() instanceof NPC || event.getEntity() instanceof Hanging || event.getEntity() instanceof ArmorStand || event.getEntity() instanceof Vehicle) {
-            if (shouldCancel(player, event.getEntity().getLocation().getChunk())) {
+            return;
+        }
+
+        // Defaults and PVP Flag
+        if (target instanceof Monster) {
+            event.setCancelled(false);
+        } else if (target instanceof Player) {
+            if (claim != null) {
+                boolean pvpOn = api.getFlagState(claim, ClaimsFlags.PVP);
+                event.setCancelled(!pvpOn);
+            }
+            event.setCancelled(true);
+        } else if (target instanceof Animals || target instanceof NPC || target instanceof Hanging || target instanceof ArmorStand || target instanceof Vehicle) {
+            if (shouldCancel(player, target.getChunk())) {
                 event.setCancelled(true);
             }
         }
@@ -247,8 +283,7 @@ public class ChunkProtectionListener implements Listener {
                     return;
                 }
 
-                // TODO: Check for BlockInteractable state and add EntityInteractables
-                if (claim.getBlockInteractables().stream().map(BlockInteractable::getBlockMaterial).toList().contains(type)) {
+                if (claim.getBlockInteractables().stream().filter(BlockInteractable::getState).map(BlockInteractable::getBlockMaterial).toList().contains(type)) {
                     return;
                 }
 
@@ -274,6 +309,19 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        Claim claim = api.getClaim(event.getRightClicked().getChunk());
+
+        if (claim == null) {
+            return;
+        }
+
+        List<EntityType> interactAllowed = claim.getEntityInteractables().stream().filter(EntityInteractable::isInteract).map(EntityInteractable::getEntityType).toList();
+
+        if (interactAllowed.contains(event.getRightClicked().getType())) {
+            event.setCancelled(false);
+            return;
+        }
+
         if (shouldCancel(event.getPlayer(), event.getRightClicked().getChunk())) {
             event.setCancelled(true);
         }
@@ -310,11 +358,6 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onVehicleEntityCollision(VehicleEntityCollisionEvent event) {
-        event.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onExplode(EntityExplodeEvent event) {
         event.setCancelled(true);
     }
 
@@ -410,6 +453,7 @@ public class ChunkProtectionListener implements Listener {
     public void onEntityInteract(EntityInteractEvent event) {
         if (api.getClaim(event.getBlock().getChunk()) != null) {
             if (event.getEntity() instanceof Steerable steerable) {
+                // TODO: Remove this (temporary) because GeyserHacks isn't working in 1.19.4+
                 // EntityInteractEvent isn't called when a Java Player is riding with a pig over a pressure plate but when a Bedrock Player is riding with a pig over a pressure plate the event is fired (because GeyserHacks is "faking" the Riding and causes the event to be fired). For Java players it is probably another event or a Bukkit bug.
                 Optional<Entity> any = steerable.getPassengers().stream().filter(entity -> entity instanceof Player).findAny();
                 if (any.isEmpty()) {

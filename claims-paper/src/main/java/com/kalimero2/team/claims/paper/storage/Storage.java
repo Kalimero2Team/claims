@@ -386,7 +386,6 @@ public class Storage {
         try {
             executeUpdate("DELETE FROM GROUPS WHERE ID = ?", group.getId());
             executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ?", group.getId());
-            // TODO: delete claim related data when deleting a group
             return true;
         } catch (SQLException ignored) {
             return false;
@@ -604,6 +603,40 @@ public class Storage {
             return true;
         } catch (SQLException ignored) {
             return false;
+        }
+    }
+
+    public void setBlockInteractable(Claim claim, Material material, boolean state) {
+        try {
+            executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), material.name(), state);
+            executeUpdate("UPDATE BLOCK_INTERACTABLES SET STATE = ? WHERE CLAIM_ID = ? AND BLOCK_IDENTIFIER = ?", state, claim.getId(), material.name());
+        } catch (SQLException ignored) {
+
+        }
+    }
+
+    public void setEntityInteractable(Claim claim, EntityType entityType, boolean damage, boolean interact) {
+        try {
+            executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), entityType.name(), interact, damage);
+            executeUpdate("UPDATE ENTITY_INTERACTABLES SET INTERACT = ?, DAMAGE = ? WHERE CLAIM_ID = ? AND ENTITY_IDENTIFIER = ?", interact, damage, claim.getId(), entityType.name());
+        } catch (SQLException ignored) {
+
+        }
+    }
+
+    public void removeBlockInteractable(Claim claim, Material material) {
+        try {
+            executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ? AND BLOCK_IDENTIFIER = ?", claim.getId(), material.name());
+        } catch (SQLException ignored) {
+
+        }
+    }
+
+    public void removeEntityInteractable(Claim claim, EntityType entityType) {
+        try {
+            executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ? AND ENTITY_IDENTIFIER = ?", claim.getId(), entityType.name());
+        } catch (SQLException ignored) {
+
         }
     }
 }

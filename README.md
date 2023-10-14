@@ -1,10 +1,12 @@
 # claims
 
-TODO:
+Future TODO:
 - API
   - [ ] Add Cancelable Claim/Unclaim events, currently only "ListenOnly" events are available
-
-
+- Claims
+  - [ ] Add EntityType Command Argument
+  - [ ] Generic allow/deny messages
+  - [ ] /chunk list for groups
 # API
 
 ```groovy

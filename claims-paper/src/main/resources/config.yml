@@ -1,4 +1,4 @@
-messages: "messages_en.yml"
+language: "en"
 database: "claims.db"
 claims:
   max-claims: 16
