@@ -16,6 +16,7 @@ repositories {
 dependencies {
     compileOnly(libs.paper.api)
     bukkitLibrary(libs.cloud.paper)
+    bukkitLibrary(libs.guava)
     implementation(project(":claims-api"))
 }
 
