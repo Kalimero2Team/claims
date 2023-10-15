@@ -20,8 +20,8 @@ dependencies {
 }
 
 tasks{
-    shadowJar{
-        fun reloc(pkg: String, name: String) = relocate(pkg, "com.kalimero2.team.claims.paper.shaded.$name")
+    assemble {
+        dependsOn(shadowJar)
     }
     runServer{
         minecraftVersion("1.20.1")

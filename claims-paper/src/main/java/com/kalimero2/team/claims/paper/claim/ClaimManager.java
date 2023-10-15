@@ -230,7 +230,7 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public @Nullable Group createGroup(OfflinePlayer owner, String name) {
-        boolean group = storage.createGroup(name, 16, false);
+        boolean group = storage.createGroup(name, 0, false);
         if (group) {
             return storage.getGroup(name);
         }

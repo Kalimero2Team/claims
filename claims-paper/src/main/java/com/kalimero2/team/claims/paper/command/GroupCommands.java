@@ -1,16 +1,22 @@
 package com.kalimero2.team.claims.paper.command;
 
 import cloud.commandframework.arguments.CommandArgument;
+import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.bukkit.parsers.OfflinePlayerArgument;
 import cloud.commandframework.context.CommandContext;
+import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
 import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.Chunk;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -22,71 +28,6 @@ public class GroupCommands extends CommandHandler {
     protected GroupCommands(CommandManager commandManager) {
         super(commandManager);
     }
-
-    @Override
-    public void register() {
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("create")
-                        .argument(StringArgument.of("name"))
-                        .handler(this::createGroup)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("delete")
-                        .argument(getGroupArgument(api,"group", PermissionLevel.OWNER))
-                        .handler(this::deleteGroup)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("rename")
-                        .argument(getGroupArgument(api,"group", PermissionLevel.OWNER))
-                        .argument(StringArgument.of("name"))
-                        .handler(this::renameGroup)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("member")
-                        .literal("add")
-                        .argument(getGroupArgument(api,"group", PermissionLevel.MODERATOR))
-                        .argument(OfflinePlayerArgument.of("player"))
-                        .handler(this::addMember)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("member")
-                        .literal("remove")
-                        .argument(getGroupArgument(api,"group", PermissionLevel.MODERATOR))
-                        .argument(OfflinePlayerArgument.of("player"))
-                        .handler(this::removeMember)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("member")
-                        .literal("list")
-                        .argument(getGroupArgument(api,"group", PermissionLevel.MEMBER))
-                        .handler(this::listMembers)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("member")
-                        .literal("promote")
-                        .argument(getGroupArgument(api,"group", PermissionLevel.ADMIN).build())
-                        .argument(OfflinePlayerArgument.of("player"))
-                        .handler(this::promoteMember)
-        );
-        commandManager.command(
-                commandManager.commandBuilder("group")
-                        .literal("member")
-                        .literal("demote")
-                        .argument(getGroupArgument(api,"group", PermissionLevel.ADMIN).build())
-                        .argument(OfflinePlayerArgument.of("player"))
-                        .handler(this::demoteMember)
-        );
-
-
-    }
-
 
     public static CommandArgument.Builder<CommandSender, Group> getGroupArgument(ClaimsApi api, String name, PermissionLevel permissionLevel) {
         return GroupArgument.<CommandSender>builder(name)
@@ -104,10 +45,199 @@ public class GroupCommands extends CommandHandler {
                 });
     }
 
+    @Override
+    public void register() {
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("create")
+                        .argument(StringArgument.of("name"))
+                        .handler(this::createGroup)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("delete")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.OWNER))
+                        .handler(this::deleteGroup)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("rename")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.OWNER))
+                        .argument(StringArgument.of("name"))
+                        .handler(this::renameGroup)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("member")
+                        .literal("add")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.MODERATOR))
+                        .argument(OfflinePlayerArgument.of("player"))
+                        .handler(this::addMember)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("member")
+                        .literal("remove")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.MODERATOR))
+                        .argument(OfflinePlayerArgument.of("player"))
+                        .handler(this::removeMember)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("member")
+                        .literal("list")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.MEMBER))
+                        .handler(this::listMembers)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("member")
+                        .literal("promote")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.ADMIN).build())
+                        .argument(OfflinePlayerArgument.of("player"))
+                        .handler(this::promoteMember)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("member")
+                        .literal("demote")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.ADMIN).build())
+                        .argument(OfflinePlayerArgument.of("player"))
+                        .handler(this::demoteMember)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("claims")
+                        .literal("list")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.MEMBER).build())
+                        .argument(IntegerArgument.optional("page"))
+                        .handler(this::listClaims)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("group")
+                        .literal("claims")
+                        .literal("transfer")
+                        .argument(getGroupArgument(api, "group", PermissionLevel.MEMBER).build())
+                        .argument(IntegerArgument.optional("amount"))
+                        .argument(StringArgument.optional("confirm"))
+                        .handler(this::transferClaims)
+        );
+    }
+
+    private void transferClaims(CommandContext<CommandSender> context) {
+        if (context.getSender() instanceof Player player) {
+            Group group = context.get("group");
+            int amount = context.getOrDefault("amount", 0);
+            String confirm = context.getOrDefault("confirm", "");
+
+            if (amount <= 0) {
+                messageUtil.sendMessage(player, "group.claims.transfer.fail_amount_required");
+                return;
+            }
+
+            if (!confirm.equals("confirm")) {
+                messageUtil.sendMessage(player, "group.claims.transfer.fail_confirm_required",
+                        Placeholder.unparsed("group", group.getName()),
+                        Placeholder.unparsed("amount", String.valueOf(amount))
+                );
+                return;
+            }
+
+            int maxClaims = api.getPlayerGroup(player).getMaxClaims();
+            int currentClaims = api.getClaims(player).size();
+
+            int free = maxClaims - currentClaims;
+
+            if (free < 2) {
+                messageUtil.sendMessage(player, "group.claims.transfer.fail_not_enough_claims");
+                return;
+            }
+
+            int newClaimAmount = group.getMaxClaims() + amount;
+            api.setMaxClaims(group, newClaimAmount);
+
+            api.setMaxClaims(api.getPlayerGroup(player), maxClaims - amount);
+
+            messageUtil.sendMessage(player, "group.claims.transfer.success",
+                    Placeholder.unparsed("group", group.getName()),
+                    Placeholder.unparsed("amount", String.valueOf(amount)),
+                    Placeholder.unparsed("new_amount", String.valueOf(newClaimAmount))
+            );
+        }
+    }
+
+    private void listClaims(CommandContext<CommandSender> context) {
+        if (context.getSender() instanceof Player player) {
+            Group group = context.get("group");
+            List<Claim> claims = api.getClaims(group);
+
+            boolean hasClaims = !claims.isEmpty();
+            boolean needsPagination = claims.size() > 10;
+
+            if (!hasClaims) {
+                messageUtil.sendMessage(player, "chunk.list.empty_other", Placeholder.unparsed("target", group.getName()));
+                return;
+            }
+
+            int page = context.getOrDefault("page", 1);
+            int maxPage = (int) Math.ceil(claims.size() / 10.0);
+            if (page > maxPage) {
+                page = maxPage;
+            }
+            if (page < 1) {
+                page = 1;
+            }
+            int start = (page - 1) * 10;
+            int end = Math.min(start + 10, claims.size());
+            claims = claims.subList(start, end);
+
+            messageUtil.sendMessage(player, "chunk.list.header_other", Placeholder.unparsed("target", group.getName()));
+            for (Claim claim : claims) {
+                Chunk chunk = claim.getChunk();
+                Block block = chunk.getBlock(0, 0, 0);
+                messageUtil.sendMessage(player, "chunk.list.entry",
+                        Placeholder.component("x", Component.text(block.getX())),
+                        Placeholder.component("z", Component.text(block.getZ())),
+                        Placeholder.component("chunk_x", Component.text(chunk.getX())),
+                        Placeholder.component("chunk_z", Component.text(chunk.getZ()))
+                );
+            }
+
+            if (needsPagination) {
+                Component nextPage = Component.text("");
+                Component prevPage = Component.text("");
+
+                if (page < maxPage) {
+                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page + 1)));
+                }
+                if (page > 1) {
+                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page - 1)));
+                }
+                messageUtil.sendMessage(player, "chunk.list.footer",
+                        Placeholder.unparsed("page", String.valueOf(page)),
+                        Placeholder.unparsed("max_page", String.valueOf(maxPage)),
+                        Placeholder.component("next", nextPage),
+                        Placeholder.component("prev", prevPage)
+                );
+
+            }
+
+        }
+    }
+
     private void createGroup(CommandContext<CommandSender> context) {
         String name = context.get("name");
         if (context.getSender() instanceof Player player) {
+            int size = api.getGroups(player).size();
+            if (size >= plugin.getConfig().getInt("groups.max_groups")) {
+                messageUtil.sendMessage(player, "group.create.fail_too_many_groups",
+                        Placeholder.unparsed("max_count", String.valueOf(plugin.getConfig().getInt("groups.max_groups"))),
+                        Placeholder.unparsed("count", String.valueOf(size))
+                );
+                return;
+            }
             Group group = api.createGroup(player, name);
+
             if (group != null) {
                 api.addGroupMember(group, player, PermissionLevel.OWNER);
                 messageUtil.sendMessage(context.getSender(), "group.create.success", Placeholder.unparsed("name", name));
@@ -166,7 +296,7 @@ public class GroupCommands extends CommandHandler {
 
                     group.getMembers().forEach(member -> {
                         Player memberPlayer = member.getPlayer().getPlayer();
-                        if(memberPlayer != null && !memberPlayer.equals(player)){
+                        if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.added",
                                     Placeholder.unparsed("group", group.getName()),
                                     Placeholder.unparsed("player", target.getName())
@@ -211,14 +341,14 @@ public class GroupCommands extends CommandHandler {
 
                     group.getMembers().forEach(member -> {
                         Player memberPlayer = member.getPlayer().getPlayer();
-                        if(memberPlayer != null && !memberPlayer.equals(player)){
+                        if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.removed",
                                     Placeholder.unparsed("group", group.getName()),
                                     Placeholder.unparsed("player", target.getName())
                             );
                         }
                     });
-                    if(target.getPlayer() != null){
+                    if (target.getPlayer() != null) {
                         messageUtil.sendMessage(target.getPlayer(), "group.broadcast.removed",
                                 Placeholder.unparsed("group", group.getName()),
                                 Placeholder.unparsed("player", target.getName())
@@ -281,7 +411,7 @@ public class GroupCommands extends CommandHandler {
 
                     group.getMembers().forEach(member -> {
                         Player memberPlayer = member.getPlayer().getPlayer();
-                        if(memberPlayer != null && !memberPlayer.equals(player)){
+                        if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.promoted",
                                     Placeholder.unparsed("group", group.getName()),
                                     Placeholder.unparsed("player", target.getName()),
@@ -329,7 +459,7 @@ public class GroupCommands extends CommandHandler {
 
                     group.getMembers().forEach(member -> {
                         Player memberPlayer = member.getPlayer().getPlayer();
-                        if(memberPlayer != null && !memberPlayer.equals(player)){
+                        if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.demoted",
                                     Placeholder.unparsed("group", group.getName()),
                                     Placeholder.unparsed("player", target.getName()),

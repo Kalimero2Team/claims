@@ -1,5 +1,6 @@
 language: "en"
 database: "claims.db"
 claims:
+  max-groups: 3
   max-claims: 16
   worlds: ["world"]
