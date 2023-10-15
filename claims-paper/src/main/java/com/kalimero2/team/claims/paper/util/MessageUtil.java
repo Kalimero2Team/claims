@@ -8,7 +8,6 @@ import org.bukkit.command.CommandSender;
 import org.intellij.lang.annotations.Subst;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;

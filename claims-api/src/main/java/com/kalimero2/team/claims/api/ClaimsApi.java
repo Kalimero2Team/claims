@@ -8,6 +8,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.Nullable;
 
@@ -98,6 +99,15 @@ public interface ClaimsApi {
      * @return the claim of the chunk or null if not claimed
      */
     @Nullable Claim getClaim(Chunk chunk);
+
+
+    /**
+     * Gets all claims in a world
+     *
+     * @param world the world to get the claims from
+     * @return all claims in specified world
+     */
+    List<Claim> getClaims(World world);
 
 
     /**
@@ -344,5 +354,11 @@ public interface ClaimsApi {
     void removeEntityInteractable(Claim claim, EntityType entityType);
 
 
+    /**
+     * Sets the owner of a chunk
+     * @param chunk the chunk to set the owner
+     * @param target the new owner of the chunk
+     */
+    void setOwner(Chunk chunk, Group target);
 
 }

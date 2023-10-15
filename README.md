@@ -5,8 +5,9 @@ Future TODO:
   - [ ] Add Cancelable Claim/Unclaim events, currently only "ListenOnly" events are available
 - Claims
   - [ ] Add EntityType Command Argument
-  - [ ] Generic allow/deny messages
   - [ ] /chunk list for groups
+
+
 # API
 
 ```groovy
@@ -18,3 +19,8 @@ dependencies {
   implementation("com.kalimero2:claims-api:2.0.0")
 }
 ```
+
+
+# Integrations
+## Squaremap
+Fork of https://github.com/jpenilla/squaremap-addons/tree/master/addons/claimchunk

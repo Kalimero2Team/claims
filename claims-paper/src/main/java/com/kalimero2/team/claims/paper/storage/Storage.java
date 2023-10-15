@@ -639,4 +639,35 @@ public class Storage {
 
         }
     }
+
+    public void updateLastSeen(Group group) {
+        try {
+            executeUpdate("UPDATE CLAIMS SET LAST_ONLINE = ? WHERE OWNER = ?", System.currentTimeMillis(), group.getId());
+        } catch (SQLException ignored) {
+
+        }
+    }
+
+    public void setOwner(Chunk chunk, Group target) {
+        try {
+            executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE CHUNK_X = ? AND CHUNK_Z = ? AND WORLD = ?", target.getId(), chunk.getX(), chunk.getZ(), chunk.getWorld().getUID().toString());
+        } catch (SQLException ignored) {
+
+        }
+    }
+
+    public List<Claim> getClaims(World world) {
+        try {
+            List<Claim> claims = new ArrayList<>();
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIMS WHERE WORLD = ?", world.getUID().toString());
+            while (resultSet.next()) {
+                Chunk chunk = world.getChunkAt(resultSet.getInt("CHUNK_X"), resultSet.getInt("CHUNK_Z"));
+                claims.add(getClaimData(chunk));
+            }
+            resultSet.close();
+            return claims;
+        } catch (SQLException ignored) {
+            return List.of();
+        }
+    }
 }

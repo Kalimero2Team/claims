@@ -10,15 +10,19 @@ import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
 import com.kalimero2.team.claims.api.interactable.BlockInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class ChunkInteractablesCommands extends CommandHandler {
     public ChunkInteractablesCommands(CommandManager commandManager) {
@@ -278,8 +282,8 @@ public class ChunkInteractablesCommands extends CommandHandler {
                     messageUtil.sendMessage(player, "chunk.interactable.list.material_header");
                     for (BlockInteractable material : materials) {
                         messageUtil.sendMessage(player, "chunk.interactable.list.material_entry",
-                                Placeholder.unparsed("material", material.getBlockMaterial().name().toLowerCase()),
-                                Placeholder.unparsed("state", material.getState() ? "allowed" : "denied")
+                                Placeholder.component("material", getMaterialComponent(material)),
+                                Placeholder.parsed("state", material.getState() ? "<allowed>" : "<denied>")
                         );
                     }
                 }
@@ -289,10 +293,12 @@ public class ChunkInteractablesCommands extends CommandHandler {
                 } else {
                     messageUtil.sendMessage(player, "chunk.interactable.list.entity_header");
                     for (EntityInteractable entity : entities) {
+                        Component entityComponent = Component.translatable(entity.getEntityType().translationKey(), entity.getEntityType().getKey().toString().replace("minecraft:", ""));
+                        entityComponent = entityComponent.hoverEvent(HoverEvent.showEntity(entity.getEntityType().key(), UUID.randomUUID()));
                         messageUtil.sendMessage(player, "chunk.interactable.list.entity_entry",
-                                Placeholder.unparsed("entity", entity.getEntityType().getKey().toString().replace("minecraft:", "")),
-                                Placeholder.unparsed("damage", entity.isDamage() ? "allowed" : "denied"),
-                                Placeholder.unparsed("interact", entity.isInteract() ? "allowed" : "denied")
+                                Placeholder.component("entity", entityComponent),
+                                Placeholder.parsed("damage", entity.isDamage() ? "<allowed>" : "<denied>"),
+                                Placeholder.parsed("interact", entity.isInteract() ? "<allowed>" : "<denied>")
                         );
                     }
                 }
@@ -302,6 +308,18 @@ public class ChunkInteractablesCommands extends CommandHandler {
                 messageUtil.sendMessage(player, "chunk.generic.fail_chunk_not_claimed");
             }
         }
+    }
+
+    @NotNull
+    private static Component getMaterialComponent(BlockInteractable material) {
+        Material blockMaterial = material.getBlockMaterial();
+        String blockTranslationKey = blockMaterial.getBlockTranslationKey();
+        if(blockTranslationKey == null){
+            blockTranslationKey = blockMaterial.name().toLowerCase();
+        }
+        Component materialComponent = Component.translatable(blockTranslationKey, blockMaterial.name().toLowerCase());
+        materialComponent = materialComponent.hoverEvent(HoverEvent.showItem(blockMaterial.key(),1));
+        return materialComponent;
     }
 
 

@@ -17,11 +17,12 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +45,7 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public void registerFlag(Flag flag) {
+        plugin.getLogger().info("Registering flag " + flag.getKey());
         registeredFlags.put(flag.getKey(), flag);
     }
 
@@ -111,6 +113,11 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     @Override
+    public List<Claim> getClaims(World world) {
+        return storage.getClaims(world);
+    }
+
+    @Override
     public List<Claim> getClaims(Group group) {
         return storage.getClaims(group);
     }
@@ -139,7 +146,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     public Group getPlayerGroup(OfflinePlayer player) {
         Group playerGroup = storage.getPlayerGroup(player);
         if (playerGroup == null) {
-            if (storage.createPlayerGroup(player, 8)) {
+            if (storage.createPlayerGroup(player, plugin.getConfig().getInt("claims.max_claims"))) {
                 playerGroup = storage.getPlayerGroup(player);
                 storage.addGroupMember(playerGroup, player, PermissionLevel.OWNER);
             } else {
@@ -266,9 +273,19 @@ public class ClaimManager implements ClaimsApi, Listener {
         storage.removeEntityInteractable(claim, entityType);
     }
 
+    @Override
+    public void setOwner(Chunk chunk, Group target) {
+        storage.setOwner(chunk, target);
+    }
+
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Group playerGroup = storage.getPlayerGroup(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        getGroups(event.getPlayer()).forEach(storage::updateLastSeen);
     }
 
     @EventHandler

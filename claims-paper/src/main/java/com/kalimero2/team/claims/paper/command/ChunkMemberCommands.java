@@ -112,6 +112,12 @@ public class ChunkMemberCommands extends CommandHandler {
                 GroupMember groupMember = api.getGroupMember(group, player);
                 if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
                     Group target = context.get("target");
+
+                    if(group.equals(target)){
+                        plugin.getMessageUtil().sendMessage(player, "chunk.remove.fail_cannot_remove_owner");
+                        return;
+                    }
+
                     if (!claim.getMembers().contains(target)) {
                         plugin.getMessageUtil().sendMessage(player, "chunk.remove.fail_already_removed",
                                 Placeholder.unparsed("target", target.getName())

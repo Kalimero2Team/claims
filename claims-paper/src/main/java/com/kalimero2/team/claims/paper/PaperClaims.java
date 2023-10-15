@@ -43,7 +43,7 @@ public class PaperClaims extends JavaPlugin {
         boolean ignored = ClaimsFlags.PVP.getDefaultState(); // This is just to make sure the class is loaded
 
         getServer().getPluginManager().registerEvents(new ChunkProtectionListener(api), this);
-        getServer().getPluginManager().registerEvents(new PlayerMoveListener(api), this);
+        getServer().getPluginManager().registerEvents(new PlayerMoveListener(api, this), this);
         getServer().getPluginManager().registerEvents(new ExplosionListener(api), this); // Flag: EXPLOSIONS
         getServer().getPluginManager().registerEvents(new PhysicsListener(api), this); // Flag: NO_PHYSICS
         getServer().getPluginManager().registerEvents(new ItemListener(api), this); // Flag: ITEM_DROP, ITEM_PICKUP

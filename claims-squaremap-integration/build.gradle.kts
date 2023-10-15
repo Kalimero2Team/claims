@@ -13,15 +13,18 @@ repositories {
 }
 
 dependencies {
+    compileOnly(platform("org.spongepowered:configurate-bom:4.1.2"))
+    compileOnly("org.spongepowered:configurate-yaml")
+
     compileOnly(libs.paper.api)
     compileOnly(libs.squaremap.api)
     compileOnly(project(":claims-api"))
 }
 
 bukkit {
-    main = "com.kalimero2.team.claims.squaremap.SquareMapClaims"
+    main = "com.kalimero2.team.claims.squaremap.SquaremapClaims"
     apiVersion = "1.20"
-    load = BukkitPluginDescription.PluginLoadOrder.STARTUP
+    load = BukkitPluginDescription.PluginLoadOrder.POSTWORLD
     authors = listOf("byquanton")
     depend = listOf("squaremap","claims-paper")
 }
