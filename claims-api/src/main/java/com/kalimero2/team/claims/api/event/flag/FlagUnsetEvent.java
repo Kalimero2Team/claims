@@ -10,15 +10,18 @@ import org.jetbrains.annotations.NotNull;
 public class FlagUnsetEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-    private boolean cancelled;
-
     private final Claim claim;
     private final Flag flag;
+    private boolean cancelled;
 
 
     public FlagUnsetEvent(Claim claim, Flag flag) {
         this.claim = claim;
         this.flag = flag;
+    }
+
+    public static HandlerList getHandlerList() {
+        return HANDLER_LIST;
     }
 
     public Claim getClaim() {
@@ -27,10 +30,6 @@ public class FlagUnsetEvent extends Event implements Cancellable {
 
     public Flag getFlag() {
         return flag;
-    }
-    
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
     }
 
     @Override

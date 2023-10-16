@@ -1,7 +1,5 @@
 package com.kalimero2.team.claims.paper.claim;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.event.ChunkClaimedEvent;
@@ -28,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 public class ClaimManager implements ClaimsApi, Listener {
@@ -36,40 +33,17 @@ public class ClaimManager implements ClaimsApi, Listener {
     private final Storage storage;
     private final PaperClaims plugin;
     private final HashMap<NamespacedKey, Flag> registeredFlags = new HashMap<>();
-    private final Cache<Claim, HashMap<Flag, Boolean>> claimFlagCache;
-    private final Cache<Chunk, Claim> chunkClaimCache;
-    private final Cache<World, List<Claim>> worldClaimCache;
-    private final Cache<Group, List<Claim>> ownerClaimCache;
-    private final Cache<Group, List<GroupMember>> groupMemberCache;
+
+    private final HashMap<Integer, Group> loadedGroups = new HashMap<>();
+    private final HashMap<Integer, Claim> loadedClaims = new HashMap<>();
+    private final HashMap<String, Integer> groupIds = new HashMap<>();
+    private final HashMap<Chunk, Integer> chunkIds = new HashMap<>();
 
 
     public ClaimManager(PaperClaims plugin, Storage storage) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         this.storage = storage;
         this.plugin = plugin;
-
-
-        claimFlagCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .build();
-
-        chunkClaimCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .build();
-
-        worldClaimCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .maximumSize(plugin.getServer().getWorlds().size())
-                .build();
-
-        ownerClaimCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .build();
-
-        groupMemberCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .build();
-
     }
 
     @Override
@@ -112,15 +86,6 @@ public class ClaimManager implements ClaimsApi, Listener {
 
         FlagSetEvent event = new FlagSetEvent(claim, flag, state);
         if (event.callEvent()) {
-            HashMap<Flag, Boolean> flags = claimFlagCache.getIfPresent(claim);
-            if (flags != null) {
-                flags.put(flag, state);
-            }else {
-                flags = new HashMap<>();
-                flags.put(flag, state);
-            }
-            claimFlagCache.put(claim, flags);
-
             storage.setFlagState(claim, flag, state);
             return true;
         } else {
@@ -135,7 +100,6 @@ public class ClaimManager implements ClaimsApi, Listener {
         }
         FlagUnsetEvent event = new FlagUnsetEvent(claim, flag);
         if (event.callEvent()) {
-            claimFlagCache.invalidate(claim);
             storage.unsetFlagState(claim, flag);
             return true;
         } else {
@@ -145,34 +109,17 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public @Nullable Claim getClaim(Chunk chunk) {
-        Claim claim = chunkClaimCache.getIfPresent(chunk);
-        if (claim == null) {
-            claim = storage.getClaimData(chunk);
-            if (claim != null) {
-                chunkClaimCache.put(chunk, claim);
-            }
-        }
-        return claim;
+        return storage.getClaimData(chunk);
     }
 
     @Override
     public List<Claim> getClaims(World world) {
-        List<Claim> claims = worldClaimCache.getIfPresent(world);
-        if (claims == null) {
-            claims = storage.getClaims(world);
-            worldClaimCache.put(world, claims);
-        }
-        return claims;
+        return storage.getClaims(world);
     }
 
     @Override
     public List<Claim> getClaims(Group group) {
-        List<Claim> claims = ownerClaimCache.getIfPresent(group);
-        if (claims == null) {
-            claims = storage.getClaims(group);
-            ownerClaimCache.put(group, claims);
-        }
-        return claims;
+        return storage.getClaims(group);
     }
 
     @Override
@@ -234,17 +181,11 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public @Nullable GroupMember getGroupMember(Group group, OfflinePlayer player) {
-        List<GroupMember> groupMembers = groupMemberCache.getIfPresent(group);
-        if (groupMembers == null) {
-            groupMembers = storage.getGroupMembers(group.getId());
-            groupMemberCache.put(group, groupMembers);
-        }
-        return groupMembers.stream().filter(groupMember -> groupMember.getPlayer().equals(player)).findFirst().orElse(null);
+        return group.getMembers().stream().filter(member -> member.getPlayer().equals(player)).findFirst().orElse(null);
     }
 
     @Override
     public boolean removeGroupMember(Group group, GroupMember member) {
-        // TODO: Update cache
         return storage.removeGroupMember(group, member);
     }
 
@@ -253,27 +194,6 @@ public class ClaimManager implements ClaimsApi, Listener {
         boolean success = storage.claimChunk(chunk, group);
         if (success) {
             Claim claim = getClaim(chunk);
-
-            assert claim != null;
-
-            chunkClaimCache.put(chunk, claim);
-
-            List<Claim> ownerClaims = ownerClaimCache.getIfPresent(group);
-            if (ownerClaims != null){
-                ownerClaims.add(claim);
-            }else {
-                ownerClaims = List.of(claim);
-            }
-            ownerClaimCache.put(group, ownerClaims);
-
-            List<Claim> worldClaims = worldClaimCache.getIfPresent(chunk.getWorld());
-            if (worldClaims != null) {
-                worldClaims.add(claim);
-            }else {
-                worldClaims = List.of(claim);
-            }
-            worldClaimCache.put(chunk.getWorld(), worldClaims);
-
             ChunkClaimedEvent event = new ChunkClaimedEvent(chunk, group, claim);
             event.callEvent();
         }
@@ -288,24 +208,6 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (claim != null) {
             boolean unclaimed = storage.unclaimChunk(claim);
             if (unclaimed) {
-                chunkClaimCache.invalidate(chunk);
-
-                List<Claim> ownerClaims = ownerClaimCache.getIfPresent(claim.getOwner());
-                if (ownerClaims != null) {
-                    ownerClaims.remove(claim);
-                }else {
-                    ownerClaims = List.of();
-                }
-                ownerClaimCache.put(claim.getOwner(), ownerClaims);
-
-                List<Claim> worldClaims = worldClaimCache.getIfPresent(chunk.getWorld());
-                if (worldClaims != null) {
-                    worldClaims.remove(claim);
-                }else {
-                    worldClaims = List.of();
-                }
-                worldClaimCache.put(chunk.getWorld(), worldClaims);
-
                 ChunkUnclaimedEvent event = new ChunkUnclaimedEvent(chunk, claim.getOwner());
                 event.callEvent();
             }

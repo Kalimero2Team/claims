@@ -2,32 +2,92 @@ package com.kalimero2.team.claims.api;
 
 import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
-import com.kalimero2.team.claims.api.interactable.BlockInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import org.bukkit.Chunk;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
-public interface Claim {
-    int getId();
+public abstract class Claim {
 
-    Group getOwner();
+    private final int id;
+    private final LocalDateTime claimedSince;
+    private final Chunk chunk;
+    protected final List<Group> members;
+    protected final List<MaterialInteractable> materialInteractables;
+    protected final List<EntityInteractable> entityInteractables;
+    protected final HashMap<Flag, Boolean> flags;
+    protected Group owner;
+    protected LocalDateTime lastOnline;
+    protected LocalDateTime lastInteraction;
 
-    Chunk getChunk();
+    protected Claim(int id, Group owner, Chunk chunk, List<Group> members, List<MaterialInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, LocalDateTime claimedSince, LocalDateTime lastInteraction, LocalDateTime lastOnline) {
+        this.id = id;
+        this.owner = owner;
+        this.chunk = chunk;
+        this.members = members;
+        this.materialInteractables = blockInteractables;
+        this.entityInteractables = entityInteractables;
+        this.flags = flags;
+        this.claimedSince = claimedSince;
+        this.lastInteraction = lastInteraction;
+        this.lastOnline = lastOnline;
+    }
 
-    List<Group> getMembers();
 
-    List<BlockInteractable> getBlockInteractables();
+    public int getId() {
+        return id;
+    }
 
-    List<EntityInteractable> getEntityInteractables();
+    public Group getOwner() {
+        return owner;
+    }
 
-    HashMap<Flag, Boolean> getFlags();
+    public Chunk getChunk() {
+        return chunk;
+    }
 
-    LocalDateTime getClaimedSince();
+    public List<Group> getMembers() {
+        return members;
+    }
 
-    LocalDateTime getLastInteraction();
+    public List<MaterialInteractable> getMaterialInteractables() {
+        return materialInteractables;
+    }
 
-    LocalDateTime getLastOnline();
+    public List<EntityInteractable> getEntityInteractables() {
+        return entityInteractables;
+    }
+
+    public HashMap<Flag, Boolean> getFlags() {
+        return flags;
+    }
+
+    public LocalDateTime getClaimedSince() {
+        return claimedSince;
+    }
+
+    public LocalDateTime getLastInteraction() {
+        return lastInteraction;
+    }
+
+    public LocalDateTime getLastOnline() {
+        return lastOnline;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Claim that = (Claim) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

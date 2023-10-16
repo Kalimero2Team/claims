@@ -9,20 +9,19 @@ import org.jetbrains.annotations.NotNull;
 public class ClaimExpireEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-    private boolean cancelled;
-
     private final Claim claim;
+    private boolean cancelled;
 
     public ClaimExpireEvent(Claim claim) {
         this.claim = claim;
     }
 
-    public Claim getClaim() {
-        return claim;
-    }
-
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
+    }
+
+    public Claim getClaim() {
+        return claim;
     }
 
     @Override

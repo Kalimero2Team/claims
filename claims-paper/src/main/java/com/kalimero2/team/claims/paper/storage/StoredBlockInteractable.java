@@ -1,25 +1,15 @@
 package com.kalimero2.team.claims.paper.storage;
 
-import com.kalimero2.team.claims.api.interactable.BlockInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import org.bukkit.Material;
 
-public class StoredBlockInteractable implements BlockInteractable {
-
-    private final Material blockMaterial;
-    private final boolean state;
+public class StoredBlockInteractable extends MaterialInteractable {
 
     public StoredBlockInteractable(Material blockMaterial, boolean state) {
-        this.blockMaterial = blockMaterial;
-        this.state = state;
+        super(blockMaterial, state);
     }
 
-    @Override
-    public Material getBlockMaterial() {
-        return blockMaterial;
-    }
-
-    @Override
-    public boolean getState() {
-        return state;
+    public void setState(boolean state) {
+        this.interact = state;
     }
 }
