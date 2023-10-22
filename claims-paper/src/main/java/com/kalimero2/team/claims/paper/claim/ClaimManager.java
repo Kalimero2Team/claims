@@ -18,6 +18,8 @@ import com.kalimero2.team.claims.paper.storage.Storage;
 import com.kalimero2.team.claims.paper.storage.StoredBlockInteractable;
 import com.kalimero2.team.claims.paper.storage.StoredClaim;
 import com.kalimero2.team.claims.paper.storage.StoredEntityInteractable;
+import com.kalimero2.team.claims.paper.storage.StoredGroup;
+import com.kalimero2.team.claims.paper.storage.StoredGroupMember;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -173,6 +175,8 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public void setMaxClaims(Group group, int max) {
         storage.setMaxClaims(group, max);
+        StoredGroup.cast(group).setMaxClaims(max);
+        refreshGroupInLoadedClaims(group);
     }
 
     @Override
@@ -180,7 +184,13 @@ public class ClaimManager implements ClaimsApi, Listener {
         GroupMemberPermissionLevelChangeEvent groupMemberPermissionLevelChangeEvent = new GroupMemberPermissionLevelChangeEvent(group, member, member.getPermissionLevel(), level);
 
         if (groupMemberPermissionLevelChangeEvent.callEvent()) {
-            return storage.setPermissionLevel(group, member, level);
+            boolean success = storage.setPermissionLevel(group, member, level);
+            StoredGroupMember storedGroupMember = StoredGroupMember.cast(member);
+            storedGroupMember.setPermissionLevel(level);
+            StoredGroup.cast(group).removeMember(member);
+            StoredGroup.cast(group).addMember(storedGroupMember);
+            refreshGroupInLoadedClaims(group);
+            return success;
         }
         return false;
     }
@@ -188,9 +198,28 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public @Nullable GroupMember addGroupMember(Group group, OfflinePlayer player, PermissionLevel level) {
         if (storage.addGroupMember(group, player, level)) {
-            return storage.getGroupMember(group, player);
+            GroupMember groupMember = storage.getGroupMember(group, player);
+            StoredGroup.cast(group).addMember(groupMember);
+            refreshGroupInLoadedClaims(group);
+            return groupMember;
         }
         return null;
+    }
+
+    private void refreshGroupInLoadedClaims(Group group) {
+        loadedClaims.values().forEach(claim -> {
+            if(claim != null){
+                if (claim.getOwner().equals(group)) {
+                    StoredClaim storedClaim = StoredClaim.cast(claim);
+                    storedClaim.setOwner(group);
+                }
+                if (claim.getMembers().contains(group)) {
+                    StoredClaim storedClaim = StoredClaim.cast(claim);
+                    storedClaim.removeMember(group);
+                    storedClaim.addMember(group);
+                }
+            }
+        });
     }
 
     @Override
@@ -200,7 +229,10 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean removeGroupMember(Group group, GroupMember member) {
-        return storage.removeGroupMember(group, member);
+        boolean success = storage.removeGroupMember(group, member);
+        StoredGroup.cast(group).removeMember(member);
+        refreshGroupInLoadedClaims(group);
+        return success;
     }
 
     @Override
@@ -208,14 +240,11 @@ public class ClaimManager implements ClaimsApi, Listener {
         boolean success = storage.claimChunk(chunk, group);
 
         if (success) {
-            plugin.getLogger().info("Claimed chunk " + chunk.getX() + " " + chunk.getZ() + " for group " + group.getName());
             loadedClaims.remove(chunk);
             Claim claim = getClaim(chunk);
             loadedClaims.put(chunk, claim);
             ChunkClaimedEvent event = new ChunkClaimedEvent(chunk, group, claim);
             event.callEvent();
-        } else {
-            plugin.getLogger().info("Could not claim chunk " + chunk.getX() + " " + chunk.getZ() + " for group " + group.getName());
         }
 
         return success;
@@ -320,10 +349,12 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public void removeBlockInteractable(Claim claim, Material material) {
         if (loadedClaims.containsValue(claim)) {
-            MaterialInteractable interactable = StoredClaim.cast(claim).getMaterialInteractables().stream().filter(materialInteractable -> materialInteractable.getBlockMaterial().equals(material)).findFirst().orElse(null);
-            if (interactable != null) {
-                StoredClaim.cast(claim).removeMaterialInteractable(interactable);
-            }
+            StoredClaim.cast(claim).getMaterialInteractables().stream()
+                    .filter(materialInteractable -> materialInteractable.getBlockMaterial().equals(material))
+                    .findFirst()
+                    .ifPresent(
+                            interactable -> StoredClaim.cast(claim).removeMaterialInteractable(interactable)
+                    );
         } else {
             storage.removeBlockInteractable(claim, material);
         }
@@ -332,10 +363,12 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public void removeEntityInteractable(Claim claim, EntityType entityType) {
         if (loadedClaims.containsValue(claim)) {
-            EntityInteractable interactable = StoredClaim.cast(claim).getEntityInteractables().stream().filter(entityInteractable -> entityInteractable.getEntityType().equals(entityType)).findFirst().orElse(null);
-            if (interactable != null) {
-                StoredClaim.cast(claim).removeEntityInteractable(interactable);
-            }
+            StoredClaim.cast(claim).getEntityInteractables().stream()
+                    .filter(entityInteractable -> entityInteractable.getEntityType().equals(entityType))
+                    .findFirst()
+                    .ifPresent(
+                            interactable -> StoredClaim.cast(claim).removeEntityInteractable(interactable)
+                    );
         } else {
             storage.removeEntityInteractable(claim, entityType);
         }

@@ -6,19 +6,16 @@ import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
-import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Chunk;
-import org.bukkit.Server;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ChunkBaseCommands extends CommandHandler {
@@ -150,15 +147,15 @@ public class ChunkBaseCommands extends CommandHandler {
 
 
                 if (claims <= maxClaims) {
-                    if(api.claimChunk(player.getChunk(), group)){
-                        if(group.isPlayer()){
+                    if (api.claimChunk(player.getChunk(), group)) {
+                        if (group.isPlayer()) {
                             plugin.getMessageUtil().sendMessage(player, "chunk.claim.success");
-                        }else {
+                        } else {
                             plugin.getMessageUtil().sendMessage(player, "chunk.claim.success_group",
                                     Placeholder.unparsed("group", group.getName())
                             );
                         }
-                    }else {
+                    } else {
                         plugin.getLogger().warning("Failed to claim chunk for " + player.getName() + " at " + player.getChunk().getX() + " " + player.getChunk().getZ());
                     }
                 } else {
@@ -184,9 +181,9 @@ public class ChunkBaseCommands extends CommandHandler {
                 Group owner = claim.getOwner();
                 messageUtil.sendMessage(player, "chunk.info.claimed_true");
 
-                if(owner.isPlayer()){
+                if (owner.isPlayer()) {
                     messageUtil.sendMessage(player, "chunk.info.owner", Placeholder.unparsed("player", owner.getName()));
-                }else {
+                } else {
                     messageUtil.sendMessage(player, "chunk.info.owner_group", Placeholder.unparsed("group", owner.getName()));
                 }
 
@@ -209,8 +206,6 @@ public class ChunkBaseCommands extends CommandHandler {
                         }
                     }
                 }
-
-
             } else {
                 messageUtil.sendMessage(player, "chunk.info.claimed_false");
             }

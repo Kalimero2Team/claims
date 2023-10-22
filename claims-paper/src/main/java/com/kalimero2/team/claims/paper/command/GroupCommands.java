@@ -243,7 +243,9 @@ public class GroupCommands extends CommandHandler {
                 api.addGroupMember(group, player, PermissionLevel.OWNER);
                 messageUtil.sendMessage(context.getSender(), "group.create.success", Placeholder.unparsed("name", name));
             } else {
-                messageUtil.sendMessage(context.getSender(), "group.create.fail");
+                messageUtil.sendMessage(context.getSender(), "group.create.fail",
+                        Placeholder.unparsed("name", name)
+                );
             }
         }
     }
@@ -252,6 +254,15 @@ public class GroupCommands extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
+
+            int size = api.getClaims(group).size();
+            if (size > 0) {
+                messageUtil.sendMessage(player, "group.delete.fail_chunks_still_claimed",
+                        Placeholder.unparsed("name", group.getName()),
+                        Placeholder.unparsed("count", String.valueOf(size))
+                );
+                return;
+            }
             if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.OWNER)) {
                 if (api.deleteGroup(group)) {
                     messageUtil.sendMessage(player, "group.delete.success", Placeholder.unparsed("name", group.getName()));
@@ -370,7 +381,7 @@ public class GroupCommands extends CommandHandler {
         for (GroupMember member : group.getMembers()) {
             messageUtil.sendMessage(context.getSender(), "group.member.list.entry",
                     Placeholder.unparsed("player", member.getPlayer().getName()),
-                    Placeholder.unparsed("level", member.getPermissionLevel().name().toLowerCase())
+                    Placeholder.parsed("level", "<level_"+member.getPermissionLevel().name().toLowerCase()+">")
             );
         }
     }

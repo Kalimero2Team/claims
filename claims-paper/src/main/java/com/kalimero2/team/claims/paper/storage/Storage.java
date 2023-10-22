@@ -170,9 +170,7 @@ public class Storage {
             if (resultSet.next()) {
                 int claim_id = resultSet.getInt("ID");
 
-                plugin.getLogger().info("Loading claim " + claim_id + " for chunk " + chunkX + " " + chunkZ);
-
-                StoredClaim storedClaim = new StoredClaim(
+                return new StoredClaim(
                         claim_id,
                         getGroup(resultSet.getInt("OWNER")),
                         chunk,
@@ -184,17 +182,12 @@ public class Storage {
                         resultSet.getLong("LAST_INTERACTION"),
                         resultSet.getLong("LAST_ONLINE")
                 );
-
-                plugin.getLogger().info("Loaded claim " + claim_id + " for chunk " + chunkX + " " + chunkZ);
-
-                return storedClaim;
             }
             resultSet.close();
 
             return null;
-        } catch (SQLException ignored) {
-            plugin.getLogger().warning("Error while loading claim for chunk " + chunk.getX() + " " + chunk.getZ());
-            ignored.printStackTrace();
+        } catch (SQLException exception) {
+            plugin.getLogger().warning("Error while loading claim for chunk " + chunk.getX() + " " + chunk.getZ() + " with error: " + exception.getMessage());
             return null;
         }
     }
@@ -211,30 +204,25 @@ public class Storage {
 
             // Update Owner
             executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE ID = ?", owner.getId(), claim.getId());
-            plugin.getLogger().info("Updating claim " + claim.getId() + " owner to " + owner.getId());
             // Update Flags
             executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
             for (Flag flag : flags.keySet()) {
                 executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), flags.get(flag));
-                plugin.getLogger().info("Updating claim " + claim.getId() + " flag " + flag.getKey().toString() + " to " + flags.get(flag));
             }
             // Update Block Interactables
             executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
             for (MaterialInteractable interactable : blockInteractables) {
                 executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), interactable.getBlockMaterial().name(), interactable.canInteract());
-                plugin.getLogger().info("Updating claim " + claim.getId() + " block interactable " + interactable.getBlockMaterial().name() + " to " + interactable.canInteract());
             }
             // Update Entity Interactables
             executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
             for (EntityInteractable interactable : entityInteractables) {
                 executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), interactable.getEntityType().name(), interactable.canInteract(), interactable.canDamage());
-                plugin.getLogger().info("Updating claim " + claim.getId() + " entity interactable " + interactable.getEntityType().name() + " to " + interactable.canInteract());
             }
             // Update Members
             executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
             for (Group member : members) {
                 executeUpdate("INSERT OR IGNORE INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), member.getId());
-                plugin.getLogger().info("Updating claim " + claim.getId() + " member " + member.getId());
             }
             connection.commit();
             connection.setAutoCommit(true);
@@ -579,22 +567,6 @@ public class Storage {
         }
     }
 
-    public boolean getFlagState(Claim claim, Flag flag) {
-        try {
-            ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", claim.getId(), flag.getKey().toString());
-            if (resultSet.next()) {
-                boolean state = resultSet.getBoolean("STATE");
-                resultSet.close();
-                return state;
-            }
-            resultSet.close();
-
-            return flag.getDefaultState();
-        } catch (SQLException ignored) {
-            return flag.getDefaultState();
-        }
-    }
-
     public boolean addGroupToClaim(Claim claim, Group group) {
         try {
             executeUpdate("INSERT INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), group.getId());
@@ -610,23 +582,6 @@ public class Storage {
             return true;
         } catch (SQLException ignored) {
             return false;
-        }
-    }
-
-    public List<Flag> getFlags(Claim claim) {
-        try {
-            List<Flag> flags = new ArrayList<>();
-            ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
-            while (resultSet.next()) {
-                String flagIdentifier = resultSet.getString("FLAG_IDENTIFIER");
-                Flag flag = ClaimsApi.getApi().getFlag(NamespacedKey.fromString(flagIdentifier));
-                flags.add(flag);
-            }
-            resultSet.close();
-
-            return flags;
-        } catch (SQLException ignored) {
-            return null;
         }
     }
 
