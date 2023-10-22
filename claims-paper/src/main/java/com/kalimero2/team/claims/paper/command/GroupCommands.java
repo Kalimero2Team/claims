@@ -228,10 +228,11 @@ public class GroupCommands extends CommandHandler {
     private void createGroup(CommandContext<CommandSender> context) {
         String name = context.get("name");
         if (context.getSender() instanceof Player player) {
-            int size = api.getGroups(player).size();
-            if (size >= plugin.getConfig().getInt("groups.max_groups")) {
+            int size = api.getGroups(player).size() - 1; // -1 because of the player group
+            int maxGroups = plugin.getConfig().getInt("claims.max-groups");
+            if (size >= maxGroups) {
                 messageUtil.sendMessage(player, "group.create.fail_too_many_groups",
-                        Placeholder.unparsed("max_count", String.valueOf(plugin.getConfig().getInt("groups.max_groups"))),
+                        Placeholder.unparsed("max_count", String.valueOf(maxGroups)),
                         Placeholder.unparsed("count", String.valueOf(size))
                 );
                 return;

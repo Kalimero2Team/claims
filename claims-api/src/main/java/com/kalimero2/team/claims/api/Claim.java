@@ -14,17 +14,17 @@ import java.util.Objects;
 public abstract class Claim {
 
     private final int id;
-    private final LocalDateTime claimedSince;
+    private final long claimedSince;
     private final Chunk chunk;
     protected final List<Group> members;
     protected final List<MaterialInteractable> materialInteractables;
     protected final List<EntityInteractable> entityInteractables;
     protected final HashMap<Flag, Boolean> flags;
     protected Group owner;
-    protected LocalDateTime lastOnline;
-    protected LocalDateTime lastInteraction;
+    protected long lastOnline;
+    protected long lastInteraction;
 
-    protected Claim(int id, Group owner, Chunk chunk, List<Group> members, List<MaterialInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, LocalDateTime claimedSince, LocalDateTime lastInteraction, LocalDateTime lastOnline) {
+    protected Claim(int id, Group owner, Chunk chunk, List<Group> members, List<MaterialInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, long claimedSince, long lastInteraction, long lastOnline) {
         this.id = id;
         this.owner = owner;
         this.chunk = chunk;
@@ -66,15 +66,15 @@ public abstract class Claim {
         return flags;
     }
 
-    public LocalDateTime getClaimedSince() {
+    public long getClaimedSince() {
         return claimedSince;
     }
 
-    public LocalDateTime getLastInteraction() {
+    public long getLastInteraction() {
         return lastInteraction;
     }
 
-    public LocalDateTime getLastOnline() {
+    public long getLastOnline() {
         return lastOnline;
     }
 

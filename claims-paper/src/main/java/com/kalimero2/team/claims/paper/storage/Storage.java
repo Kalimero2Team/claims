@@ -170,7 +170,9 @@ public class Storage {
             if (resultSet.next()) {
                 int claim_id = resultSet.getInt("ID");
 
-                return new StoredClaim(
+                plugin.getLogger().info("Loading claim " + claim_id + " for chunk " + chunkX + " " + chunkZ);
+
+                StoredClaim storedClaim = new StoredClaim(
                         claim_id,
                         getGroup(resultSet.getInt("OWNER")),
                         chunk,
@@ -178,15 +180,21 @@ public class Storage {
                         getBlockInteractables(claim_id),
                         getEntityInteractables(claim_id),
                         getFlags(claim_id),
-                        resultSet.getTimestamp("CLAIMED_SINCE").toLocalDateTime(),
-                        resultSet.getTimestamp("LAST_INTERACTION").toLocalDateTime(),
-                        resultSet.getTimestamp("LAST_ONLINE").toLocalDateTime()
+                        resultSet.getLong("CLAIMED_SINCE"),
+                        resultSet.getLong("LAST_INTERACTION"),
+                        resultSet.getLong("LAST_ONLINE")
                 );
+
+                plugin.getLogger().info("Loaded claim " + claim_id + " for chunk " + chunkX + " " + chunkZ);
+
+                return storedClaim;
             }
             resultSet.close();
 
             return null;
         } catch (SQLException ignored) {
+            plugin.getLogger().warning("Error while loading claim for chunk " + chunk.getX() + " " + chunk.getZ());
+            ignored.printStackTrace();
             return null;
         }
     }
@@ -203,25 +211,30 @@ public class Storage {
 
             // Update Owner
             executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE ID = ?", owner.getId(), claim.getId());
+            plugin.getLogger().info("Updating claim " + claim.getId() + " owner to " + owner.getId());
             // Update Flags
             executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
             for (Flag flag : flags.keySet()) {
                 executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), flags.get(flag));
+                plugin.getLogger().info("Updating claim " + claim.getId() + " flag " + flag.getKey().toString() + " to " + flags.get(flag));
             }
             // Update Block Interactables
             executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
             for (MaterialInteractable interactable : blockInteractables) {
                 executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), interactable.getBlockMaterial().name(), interactable.canInteract());
+                plugin.getLogger().info("Updating claim " + claim.getId() + " block interactable " + interactable.getBlockMaterial().name() + " to " + interactable.canInteract());
             }
             // Update Entity Interactables
             executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
             for (EntityInteractable interactable : entityInteractables) {
                 executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), interactable.getEntityType().name(), interactable.canInteract(), interactable.canDamage());
+                plugin.getLogger().info("Updating claim " + claim.getId() + " entity interactable " + interactable.getEntityType().name() + " to " + interactable.canInteract());
             }
             // Update Members
             executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
             for (Group member : members) {
                 executeUpdate("INSERT OR IGNORE INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), member.getId());
+                plugin.getLogger().info("Updating claim " + claim.getId() + " member " + member.getId());
             }
             connection.commit();
             connection.setAutoCommit(true);
@@ -708,6 +721,14 @@ public class Storage {
             return claims;
         } catch (SQLException ignored) {
             return List.of();
+        }
+    }
+
+    public void shutdown() {
+        try {
+            connection.close();
+        } catch (SQLException ignored) {
+
         }
     }
 }

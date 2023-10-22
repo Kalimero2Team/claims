@@ -15,6 +15,7 @@ public final class SquaremapClaims extends JavaPlugin {
         this.config.reload();
 
         ClaimsHook.registerFlag();
+        ClaimsHook.registerListener(this);
 
         this.squaremapHook = new SquaremapHook(this);
     }

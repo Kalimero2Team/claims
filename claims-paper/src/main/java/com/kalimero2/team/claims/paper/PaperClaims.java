@@ -58,6 +58,11 @@ public class PaperClaims extends JavaPlugin {
         }
     }
 
+    @Override
+    public void onDisable() {
+        api.shutdown();
+    }
+
     public MessageUtil getMessageUtil() {
         return messageUtil;
     }

@@ -88,9 +88,9 @@ public class ClaimManager implements ClaimsApi, Listener {
 
         FlagSetEvent event = new FlagSetEvent(claim, flag, state);
         if (event.callEvent()) {
-            if(loadedClaims.containsValue(claim)){
+            if (loadedClaims.containsValue(claim)) {
                 StoredClaim.cast(claim).setFlag(flag, state);
-            }else {
+            } else {
                 storage.setFlagState(claim, flag, state);
             }
             return true;
@@ -106,9 +106,9 @@ public class ClaimManager implements ClaimsApi, Listener {
         }
         FlagUnsetEvent event = new FlagUnsetEvent(claim, flag);
         if (event.callEvent()) {
-            if(loadedClaims.containsValue(claim)){
+            if (loadedClaims.containsValue(claim)) {
                 StoredClaim.cast(claim).removeFlag(flag);
-            }else {
+            } else {
                 storage.unsetFlagState(claim, flag);
             }
             return true;
@@ -119,10 +119,12 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public @Nullable Claim getClaim(Chunk chunk) {
-        if(loadedClaims.containsKey(chunk)){
+        if (loadedClaims.containsKey(chunk)) {
             return loadedClaims.get(chunk);
         }
-        return storage.getClaimData(chunk);
+        Claim claimData = storage.getClaimData(chunk);
+        loadedClaims.put(chunk, claimData);
+        return claimData;
     }
 
     @Override
@@ -159,7 +161,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     public Group getPlayerGroup(OfflinePlayer player) {
         Group playerGroup = storage.getPlayerGroup(player);
         if (playerGroup == null) {
-            if (storage.createPlayerGroup(player, plugin.getConfig().getInt("claims.max_claims"))) {
+            if (storage.createPlayerGroup(player, plugin.getConfig().getInt("claims.max-claims"))) {
                 return storage.getPlayerGroup(player);
             } else {
                 throw new IllegalStateException("Could not create player group");
@@ -177,7 +179,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     public boolean setPermissionLevel(Group group, GroupMember member, PermissionLevel level) {
         GroupMemberPermissionLevelChangeEvent groupMemberPermissionLevelChangeEvent = new GroupMemberPermissionLevelChangeEvent(group, member, member.getPermissionLevel(), level);
 
-        if(groupMemberPermissionLevelChangeEvent.callEvent()){
+        if (groupMemberPermissionLevelChangeEvent.callEvent()) {
             return storage.setPermissionLevel(group, member, level);
         }
         return false;
@@ -206,10 +208,14 @@ public class ClaimManager implements ClaimsApi, Listener {
         boolean success = storage.claimChunk(chunk, group);
 
         if (success) {
+            plugin.getLogger().info("Claimed chunk " + chunk.getX() + " " + chunk.getZ() + " for group " + group.getName());
+            loadedClaims.remove(chunk);
             Claim claim = getClaim(chunk);
+            loadedClaims.put(chunk, claim);
             ChunkClaimedEvent event = new ChunkClaimedEvent(chunk, group, claim);
-
             event.callEvent();
+        } else {
+            plugin.getLogger().info("Could not claim chunk " + chunk.getX() + " " + chunk.getZ() + " for group " + group.getName());
         }
 
         return success;
@@ -222,6 +228,7 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (claim != null) {
             boolean unclaimed = storage.unclaimChunk(claim);
             if (unclaimed) {
+                loadedClaims.remove(chunk);
                 ChunkUnclaimedEvent event = new ChunkUnclaimedEvent(chunk, claim.getOwner());
                 event.callEvent();
             }
@@ -232,11 +239,27 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean addGroupToClaim(Claim claim, Group group) {
+        if (loadedClaims.containsValue(claim)) {
+            StoredClaim storedClaim = StoredClaim.cast(claim);
+            if (storedClaim.getMembers().contains(group)) {
+                return false;
+            }
+            storedClaim.addMember(group);
+            return true;
+        }
         return storage.addGroupToClaim(claim, group);
     }
 
     @Override
     public boolean removeGroupFromClaim(Claim claim, Group group) {
+        if (loadedClaims.containsValue(claim)) {
+            StoredClaim storedClaim = StoredClaim.cast(claim);
+            if (!storedClaim.getMembers().contains(group)) {
+                return false;
+            }
+            storedClaim.removeMember(group);
+            return true;
+        }
         return storage.removeGroupFromClaim(claim, group);
     }
 
@@ -267,65 +290,65 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public void setBlockInteractable(Claim claim, Material material, boolean state) {
-        if(loadedClaims.containsValue(claim)){
+        if (loadedClaims.containsValue(claim)) {
             MaterialInteractable interactable = StoredClaim.cast(claim).getMaterialInteractables().stream().filter(materialInteractable -> materialInteractable.getBlockMaterial().equals(material)).findFirst().orElse(null);
-            if(interactable != null) {
+            if (interactable != null) {
                 StoredBlockInteractable.cast(interactable).setState(state);
-            }else {
+            } else {
                 StoredClaim.cast(claim).addMaterialInteractable(new StoredBlockInteractable(material, state));
             }
-        }else {
+        } else {
             storage.setBlockInteractable(claim, material, state);
         }
     }
 
     @Override
     public void setEntityInteractable(Claim claim, EntityType entityType, boolean damage, boolean interact) {
-        if(loadedClaims.containsValue(claim)){
+        if (loadedClaims.containsValue(claim)) {
             EntityInteractable interactable = StoredClaim.cast(claim).getEntityInteractables().stream().filter(entityInteractable -> entityInteractable.getEntityType().equals(entityType)).findFirst().orElse(null);
-            if(interactable != null) {
+            if (interactable != null) {
                 StoredEntityInteractable.cast(interactable).setDamage(damage);
                 StoredEntityInteractable.cast(interactable).setInteract(interact);
-            }else {
+            } else {
                 StoredClaim.cast(claim).addEntityInteractable(new StoredEntityInteractable(entityType, interact, damage));
             }
-        }else {
+        } else {
             storage.setEntityInteractable(claim, entityType, damage, interact);
         }
     }
 
     @Override
     public void removeBlockInteractable(Claim claim, Material material) {
-        if(loadedClaims.containsValue(claim)){
+        if (loadedClaims.containsValue(claim)) {
             MaterialInteractable interactable = StoredClaim.cast(claim).getMaterialInteractables().stream().filter(materialInteractable -> materialInteractable.getBlockMaterial().equals(material)).findFirst().orElse(null);
-            if(interactable != null) {
+            if (interactable != null) {
                 StoredClaim.cast(claim).removeMaterialInteractable(interactable);
             }
-        }else {
+        } else {
             storage.removeBlockInteractable(claim, material);
         }
     }
 
     @Override
     public void removeEntityInteractable(Claim claim, EntityType entityType) {
-        if(loadedClaims.containsValue(claim)){
+        if (loadedClaims.containsValue(claim)) {
             EntityInteractable interactable = StoredClaim.cast(claim).getEntityInteractables().stream().filter(entityInteractable -> entityInteractable.getEntityType().equals(entityType)).findFirst().orElse(null);
-            if(interactable != null) {
+            if (interactable != null) {
                 StoredClaim.cast(claim).removeEntityInteractable(interactable);
             }
-        }else {
+        } else {
             storage.removeEntityInteractable(claim, entityType);
         }
     }
 
     @Override
     public void setOwner(Chunk chunk, Group target) {
-        if(loadedClaims.containsKey(chunk)){
+        if (loadedClaims.containsKey(chunk)) {
             Claim claim = loadedClaims.get(chunk);
-            if(claim != null){
+            if (claim != null) {
                 StoredClaim.cast(claim).setOwner(target);
             }
-        }else {
+        } else {
             storage.setOwner(chunk, target);
         }
     }
@@ -333,6 +356,9 @@ public class ClaimManager implements ClaimsApi, Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Group playerGroup = storage.getPlayerGroup(event.getPlayer());
+        if (playerGroup == null) {
+            storage.createPlayerGroup(event.getPlayer(), plugin.getConfig().getInt("claims.max-claims"));
+        }
     }
 
     @EventHandler
@@ -342,19 +368,27 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
-        Claim claimData = storage.getClaimData(event.getChunk());
-        loadedClaims.put(event.getChunk(), claimData);
+        loadedClaims.put(event.getChunk(), getClaim(event.getChunk()));
     }
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
         if (loadedClaims.containsKey(event.getChunk())) {
             Claim claim = loadedClaims.get(event.getChunk());
-            if(claim != null){
+            if (claim != null) {
                 storage.saveClaim(claim);
             }
             loadedClaims.remove(event.getChunk());
         }
+    }
 
+    public void shutdown() {
+        for (Claim claim : loadedClaims.values()) {
+            if (claim != null) {
+                storage.saveClaim(claim);
+            }
+        }
+        loadedClaims.clear();
+        storage.shutdown();
     }
 }

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class StoredClaim extends Claim {
 
-    protected StoredClaim(int id, Group owner, Chunk chunk, List<Group> members, List<MaterialInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, LocalDateTime claimedSince, LocalDateTime lastInteraction, LocalDateTime lastOnline) {
+    protected StoredClaim(int id, Group owner, Chunk chunk, List<Group> members, List<MaterialInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, long claimedSince, long lastInteraction, long lastOnline) {
         super(id, owner, chunk, members, blockInteractables, entityInteractables, flags, claimedSince, lastInteraction, lastOnline);
     }
 
@@ -25,11 +25,11 @@ public class StoredClaim extends Claim {
         this.owner = owner;
     }
 
-    public void setLastOnline(LocalDateTime lastOnline) {
+    public void setLastOnline(long lastOnline) {
         this.lastOnline = lastOnline;
     }
 
-    public void setLastInteraction(LocalDateTime lastInteraction) {
+    public void setLastInteraction(long lastInteraction) {
         this.lastInteraction = lastInteraction;
     }
 
