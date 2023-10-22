@@ -10,14 +10,17 @@ import org.jetbrains.annotations.NotNull;
 public class GroupRemoveMemberEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-    private boolean cancelled;
-
     private final Group group;
     private final GroupMember member;
+    private boolean cancelled;
 
     public GroupRemoveMemberEvent(Group group, GroupMember member) {
         this.group = group;
         this.member = member;
+    }
+
+    public static HandlerList getHandlerList() {
+        return HANDLER_LIST;
     }
 
     public Group getGroup() {
@@ -26,10 +29,6 @@ public class GroupRemoveMemberEvent extends Event implements Cancellable {
 
     public GroupMember getMember() {
         return member;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
     }
 
     @Override

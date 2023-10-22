@@ -6,7 +6,7 @@ import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
-import com.kalimero2.team.claims.api.interactable.BlockInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import org.bukkit.Chunk;
@@ -227,9 +227,9 @@ public class Storage {
         }
     }
 
-    private @Nullable List<BlockInteractable> getBlockInteractables(int id) {
+    private @Nullable List<MaterialInteractable> getBlockInteractables(int id) {
         try {
-            List<BlockInteractable> interactables = new ArrayList<>();
+            List<MaterialInteractable> interactables = new ArrayList<>();
             ResultSet resultSet = executeQuery("SELECT * FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", id);
             while (resultSet.next()) {
                 String blockIdentifier = resultSet.getString("BLOCK_IDENTIFIER");

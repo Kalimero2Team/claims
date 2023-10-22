@@ -3,103 +3,61 @@ package com.kalimero2.team.claims.paper.storage;
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
-import com.kalimero2.team.claims.api.interactable.BlockInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import org.bukkit.Chunk;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
-public class StoredClaim implements Claim {
-    private final int id;
+public class StoredClaim extends Claim {
 
-    private final Group owner;
-    private final Chunk chunk;
-    private final List<Group> members;
-    private final List<BlockInteractable> blockInteractables;
-    private final List<EntityInteractable> entityInteractables;
-    private final HashMap<Flag, Boolean> flags;
-    private final LocalDateTime claimedSince;
-    private final LocalDateTime lastInteraction;
-    private final LocalDateTime lastOnline;
+    protected StoredClaim(int id, Group owner, Chunk chunk, List<Group> members, List<MaterialInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, LocalDateTime claimedSince, LocalDateTime lastInteraction, LocalDateTime lastOnline) {
+        super(id, owner, chunk, members, blockInteractables, entityInteractables, flags, claimedSince, lastInteraction, lastOnline);
+    }
 
-
-    protected StoredClaim(int id, Group owner, Chunk chunk, List<Group> members, List<BlockInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, LocalDateTime claimedSince, LocalDateTime lastInteraction, LocalDateTime lastOnline) {
-        this.id = id;
+    public void setOwner(Group owner) {
         this.owner = owner;
-        this.chunk = chunk;
-        this.members = members;
-        this.blockInteractables = blockInteractables;
-        this.entityInteractables = entityInteractables;
-        this.flags = flags;
-        this.claimedSince = claimedSince;
-        this.lastInteraction = lastInteraction;
+    }
+
+    public void setLastOnline(LocalDateTime lastOnline) {
         this.lastOnline = lastOnline;
     }
 
-
-    @Override
-    public int getId() {
-        return id;
+    public void setLastInteraction(LocalDateTime lastInteraction) {
+        this.lastInteraction = lastInteraction;
     }
 
-    @Override
-    public Group getOwner() {
-        return owner;
+    public void addMember(Group group) {
+        members.add(group);
     }
 
-    @Override
-    public Chunk getChunk() {
-        return chunk;
+    public void removeMember(Group group) {
+        members.remove(group);
     }
 
-    @Override
-    public List<Group> getMembers() {
-        return members;
+    public void addMaterialInteractable(MaterialInteractable materialInteractable) {
+        materialInteractables.add(materialInteractable);
     }
 
-    @Override
-    public List<BlockInteractable> getBlockInteractables() {
-        return blockInteractables;
+    public void removeMaterialInteractable(MaterialInteractable materialInteractable) {
+        materialInteractables.remove(materialInteractable);
     }
 
-    @Override
-    public List<EntityInteractable> getEntityInteractables() {
-        return entityInteractables;
+    public void addEntityInteractable(EntityInteractable entityInteractable) {
+        entityInteractables.add(entityInteractable);
     }
 
-    @Override
-    public HashMap<Flag, Boolean> getFlags() {
-        return flags;
+    public void removeEntityInteractable(EntityInteractable entityInteractable) {
+        entityInteractables.remove(entityInteractable);
     }
 
-    @Override
-    public LocalDateTime getClaimedSince() {
-        return claimedSince;
+    public void setFlag(Flag flag, boolean state) {
+        flags.put(flag, state);
     }
 
-    @Override
-    public LocalDateTime getLastInteraction() {
-        return lastInteraction;
-    }
-
-    @Override
-    public LocalDateTime getLastOnline() {
-        return lastOnline;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        StoredClaim that = (StoredClaim) o;
-        return id == that.id;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    public void removeFlag(Flag flag) {
+        flags.remove(flag);
     }
 }

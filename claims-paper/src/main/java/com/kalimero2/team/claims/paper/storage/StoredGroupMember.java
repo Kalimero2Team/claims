@@ -4,23 +4,13 @@ import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
 import org.bukkit.OfflinePlayer;
 
-public class StoredGroupMember implements GroupMember {
-
-    private final OfflinePlayer player;
-    private final PermissionLevel permissionLevel;
+public class StoredGroupMember extends GroupMember {
 
     protected StoredGroupMember(OfflinePlayer player, PermissionLevel permissionLevel) {
-        this.player = player;
+        super(player, permissionLevel);
+    }
+
+    public void setPermissionLevel(PermissionLevel permissionLevel) {
         this.permissionLevel = permissionLevel;
-    }
-
-    @Override
-    public OfflinePlayer getPlayer() {
-        return player;
-    }
-
-    @Override
-    public PermissionLevel getPermissionLevel() {
-        return permissionLevel;
     }
 }

@@ -4,59 +4,28 @@ import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 
 import java.util.List;
-import java.util.Objects;
 
-public class StoredGroup implements Group {
-
-    private final int id;
-    private final String name;
-    private final int maxClaims;
-    private final boolean isPlayer;
-    private final List<GroupMember> members;
+public class StoredGroup extends Group {
 
     protected StoredGroup(int id, String name, int maxClaims, boolean isPlayer, List<GroupMember> members) {
-        this.id = id;
+        super(id, name, maxClaims, isPlayer, members);
+
+    }
+
+    public void setName(String name) {
         this.name = name;
+    }
+
+    public void setMaxClaims(int maxClaims) {
         this.maxClaims = maxClaims;
-        this.isPlayer = isPlayer;
-        this.members = members;
     }
 
-    @Override
-    public int getId() {
-        return id;
+    public void addMember(GroupMember member) {
+        members.add(member);
     }
 
-    @Override
-    public String getName() {
-        return name;
+    public void removeMember(GroupMember member) {
+        members.remove(member);
     }
 
-    @Override
-    public int getMaxClaims() {
-        return maxClaims;
-    }
-
-    @Override
-    public boolean isPlayer() {
-        return isPlayer;
-    }
-
-    @Override
-    public List<GroupMember> getMembers() {
-        return members;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        StoredGroup that = (StoredGroup) o;
-        return id == that.id;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
 }

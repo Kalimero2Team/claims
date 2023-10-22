@@ -105,12 +105,12 @@ public class ChunkAdminCommands extends CommandHandler {
                 Chunk chunk = claim.getChunk();
                 Block block = chunk.getBlock(0, 0, 0);
                 Component message = messageUtil.getMessage("chunk.list.entry",
-                                Placeholder.component("x", Component.text(block.getX())),
-                                Placeholder.component("z", Component.text(block.getZ())),
-                                Placeholder.component("chunk_x", Component.text(chunk.getX())),
-                                Placeholder.component("chunk_z", Component.text(chunk.getZ())));
-
-                message = message.clickEvent(ClickEvent.runCommand("/tp " + block.getX() + " 100 " + block.getZ())); // TODO: Get highest block at x z
+                        Placeholder.component("x", Component.text(block.getX())),
+                        Placeholder.component("z", Component.text(block.getZ())),
+                        Placeholder.component("chunk_x", Component.text(chunk.getX())),
+                        Placeholder.component("chunk_z", Component.text(chunk.getZ())));
+                int y = block.getWorld().getHighestBlockYAt(block.getX(), block.getZ()) + 1;
+                message = message.clickEvent(ClickEvent.runCommand("/tp " + block.getX() + " " + y + " " + block.getZ()));
                 message = message.hoverEvent(HoverEvent.showText(messageUtil.getMessage("chunk.list.tp_hover")));
                 player.sendMessage(message);
             }
@@ -141,8 +141,7 @@ public class ChunkAdminCommands extends CommandHandler {
             Claim claim = api.getClaim(player.getChunk());
             if (claim != null) {
                 Group target = context.get("target");
-                // TODO: Add setOwner method to api
-                // api.setOwner(player.getChunk(), target);
+                api.setOwner(player.getChunk(), target);
                 plugin.getMessageUtil().sendMessage(player, "chunk.admin.set_owner", Placeholder.unparsed("target", target.toString()));
             } else {
                 plugin.getMessageUtil().sendMessage(player, "chunk.generic.fail_chunk_not_claimed");

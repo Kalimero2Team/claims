@@ -34,7 +34,7 @@ public enum PermissionLevel {
         int level = getLevel();
 
         level++;
-        if(level > 9) {
+        if (level > 9) {
             return this;
         }
         while (fromLevel(level) == null) {
@@ -47,7 +47,7 @@ public enum PermissionLevel {
     public PermissionLevel previous() {
         int level = getLevel();
         level--;
-        if(level < 0) {
+        if (level < 0) {
             return this;
         }
         while (fromLevel(level) == null) {

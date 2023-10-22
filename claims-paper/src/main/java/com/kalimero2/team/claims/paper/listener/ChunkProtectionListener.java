@@ -4,9 +4,8 @@ import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.api.group.Group;
-import com.kalimero2.team.claims.api.interactable.BlockInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
-import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import org.bukkit.Chunk;
@@ -241,8 +240,8 @@ public class ChunkProtectionListener implements Listener {
 
         if (claim != null) {
             List<EntityInteractable> entityInteractables = claim.getEntityInteractables();
-            damageAllowed = entityInteractables.stream().filter(EntityInteractable::isDamage).map(EntityInteractable::getEntityType).toList();
-            damageDenied = entityInteractables.stream().filter(entityInteractable -> !entityInteractable.isDamage()).map(EntityInteractable::getEntityType).toList();
+            damageAllowed = entityInteractables.stream().filter(EntityInteractable::canDamage).map(EntityInteractable::getEntityType).toList();
+            damageDenied = entityInteractables.stream().filter(entityInteractable -> !entityInteractable.canDamage()).map(EntityInteractable::getEntityType).toList();
         }
 
         if (damageDenied.contains(target.getType())) {
@@ -283,7 +282,7 @@ public class ChunkProtectionListener implements Listener {
                     return;
                 }
 
-                if (claim.getBlockInteractables().stream().filter(BlockInteractable::getState).map(BlockInteractable::getBlockMaterial).toList().contains(type)) {
+                if (claim.getMaterialInteractables().stream().filter(MaterialInteractable::canInteract).map(MaterialInteractable::getBlockMaterial).toList().contains(type)) {
                     return;
                 }
 
@@ -315,7 +314,7 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
 
-        List<EntityType> interactAllowed = claim.getEntityInteractables().stream().filter(EntityInteractable::isInteract).map(EntityInteractable::getEntityType).toList();
+        List<EntityType> interactAllowed = claim.getEntityInteractables().stream().filter(EntityInteractable::canInteract).map(EntityInteractable::getEntityType).toList();
 
         if (interactAllowed.contains(event.getRightClicked().getType())) {
             event.setCancelled(false);
@@ -441,7 +440,7 @@ public class ChunkProtectionListener implements Listener {
             Claim claim = api.getClaim(event.getBlock().getChunk());
             if (shouldCancel(event.getPlayer(), claim)) {
                 // TODO: Check for BlockInteractable state
-                if (claim.getBlockInteractables().stream().map(BlockInteractable::getBlockMaterial).toList().contains(Material.CAMPFIRE)) {
+                if (claim.getMaterialInteractables().stream().map(MaterialInteractable::getBlockMaterial).toList().contains(Material.CAMPFIRE)) {
                     event.setCancelled(true);
                 }
             }

@@ -36,6 +36,8 @@ public class ClaimManager implements ClaimsApi, Listener {
     private final Storage storage;
     private final PaperClaims plugin;
     private final HashMap<NamespacedKey, Flag> registeredFlags = new HashMap<>();
+    private final HashMap<Integer, Claim> loadedClaims = new HashMap<>();
+
 
     public ClaimManager(PaperClaims plugin, Storage storage) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -181,7 +183,7 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public @Nullable GroupMember getGroupMember(Group group, OfflinePlayer player) {
-        return storage.getGroupMember(group, player);
+        return group.getMembers().stream().filter(member -> member.getPlayer().equals(player)).findFirst().orElse(null);
     }
 
     @Override

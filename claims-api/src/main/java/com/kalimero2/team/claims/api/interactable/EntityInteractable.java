@@ -2,12 +2,27 @@ package com.kalimero2.team.claims.api.interactable;
 
 import org.bukkit.entity.EntityType;
 
-public interface EntityInteractable {
+public abstract class EntityInteractable {
 
-    EntityType getEntityType();
+    private final EntityType entityType;
+    protected boolean interact;
+    protected boolean damage;
 
-    boolean isInteract();
+    public EntityInteractable(EntityType entityType, boolean interact, boolean damage) {
+        this.entityType = entityType;
+        this.interact = interact;
+        this.damage = damage;
+    }
 
-    boolean isDamage();
+    public EntityType getEntityType() {
+        return entityType;
+    }
 
+    public boolean canInteract() {
+        return interact;
+    }
+
+    public boolean canDamage() {
+        return damage;
+    }
 }
