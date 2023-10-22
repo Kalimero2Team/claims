@@ -19,6 +19,8 @@ public final class ClaimsHook {
     }
 
     public static List<Claim> getClaims(World world) {
+
+
         return api.getClaims(world);
     }
 }

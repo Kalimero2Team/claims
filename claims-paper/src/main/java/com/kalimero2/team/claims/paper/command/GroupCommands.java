@@ -208,10 +208,10 @@ public class GroupCommands extends CommandHandler {
                 Component prevPage = Component.text("");
 
                 if (page < maxPage) {
-                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/group claims list " + group.getName() + " " + (page + 1)));
+                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page + 1)));
                 }
                 if (page > 1) {
-                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/group claims list " + group.getName() + " " + (page - 1)));
+                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page - 1)));
                 }
                 messageUtil.sendMessage(player, "chunk.list.footer",
                         Placeholder.unparsed("page", String.valueOf(page)),
@@ -228,10 +228,10 @@ public class GroupCommands extends CommandHandler {
     private void createGroup(CommandContext<CommandSender> context) {
         String name = context.get("name");
         if (context.getSender() instanceof Player player) {
-            int size = api.getGroups(player).size() - 1;
-            if (size >= 3) {
+            int size = api.getGroups(player).size();
+            if (size >= plugin.getConfig().getInt("groups.max_groups")) {
                 messageUtil.sendMessage(player, "group.create.fail_too_many_groups",
-                        Placeholder.unparsed("max_count", String.valueOf(3)),
+                        Placeholder.unparsed("max_count", String.valueOf(plugin.getConfig().getInt("groups.max_groups"))),
                         Placeholder.unparsed("count", String.valueOf(size))
                 );
                 return;
@@ -252,12 +252,6 @@ public class GroupCommands extends CommandHandler {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
             if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.OWNER)) {
-
-                if(!api.getClaims(group).isEmpty()){
-                    messageUtil.sendMessage(player, "group.delete.fail_still_has_claims");
-                    return;
-                }
-
                 if (api.deleteGroup(group)) {
                     messageUtil.sendMessage(player, "group.delete.success", Placeholder.unparsed("name", group.getName()));
                 } else {

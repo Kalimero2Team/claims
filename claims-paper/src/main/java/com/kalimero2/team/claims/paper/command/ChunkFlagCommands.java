@@ -14,7 +14,6 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class ChunkFlagCommands extends CommandHandler {
     protected ChunkFlagCommands(CommandManager commandManager) {
@@ -41,7 +40,7 @@ public class ChunkFlagCommands extends CommandHandler {
                                             if (context.getSender() instanceof Player player) {
                                                 Claim claim = api.getClaim(player.getChunk());
                                                 if (claim != null) {
-                                                    Set<Flag> flags = claim.getFlags().keySet();
+                                                    List<Flag> flags = api.getFlags(claim);
                                                     List<String> suggestions = new ArrayList<>();
                                                     for (Flag flag : flags) {
                                                         suggestions.add(flag.getKeyString());
@@ -69,7 +68,7 @@ public class ChunkFlagCommands extends CommandHandler {
             Claim claim = api.getClaim(player.getChunk());
 
             if (claim != null) {
-                Set<Flag> flags = claim.getFlags().keySet();
+                List<Flag> flags = api.getFlags(claim);
                 if(flags.isEmpty()) {
                     messageUtil.sendMessage(player, "chunk.flag.list.empty");
                     return;

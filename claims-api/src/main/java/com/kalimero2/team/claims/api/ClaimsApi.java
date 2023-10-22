@@ -41,6 +41,13 @@ public interface ClaimsApi {
     List<Flag> getFlags();
 
     /**
+     * Gets all set {@link Flag}s of a {@link Claim}
+     * @param claim the claim to get the flags from
+     * @return all flags of the claim
+     */
+    List<Flag> getFlags(Claim claim);
+
+    /**
      * Gets a {@link Flag} by its {@link NamespacedKey}
      *
      * @param key the NamespacedKey of the flag

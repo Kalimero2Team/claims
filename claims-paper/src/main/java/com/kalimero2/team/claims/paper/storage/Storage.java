@@ -526,6 +526,22 @@ public class Storage {
         }
     }
 
+    public boolean getFlagState(Claim claim, Flag flag) {
+        try {
+            ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", claim.getId(), flag.getKey().toString());
+            if (resultSet.next()) {
+                boolean state = resultSet.getBoolean("STATE");
+                resultSet.close();
+                return state;
+            }
+            resultSet.close();
+
+            return flag.getDefaultState();
+        } catch (SQLException ignored) {
+            return flag.getDefaultState();
+        }
+    }
+
     public boolean addGroupToClaim(Claim claim, Group group) {
         try {
             executeUpdate("INSERT INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), group.getId());
