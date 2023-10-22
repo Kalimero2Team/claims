@@ -9,6 +9,10 @@ public class StoredBlockInteractable extends MaterialInteractable {
         super(blockMaterial, state);
     }
 
+    public static StoredBlockInteractable cast(MaterialInteractable materialInteractable){
+        return (StoredBlockInteractable) materialInteractable;
+    }
+
     public void setState(boolean state) {
         this.interact = state;
     }

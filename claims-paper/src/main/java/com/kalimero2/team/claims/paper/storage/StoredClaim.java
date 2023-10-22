@@ -17,6 +17,10 @@ public class StoredClaim extends Claim {
         super(id, owner, chunk, members, blockInteractables, entityInteractables, flags, claimedSince, lastInteraction, lastOnline);
     }
 
+    public static StoredClaim cast(Claim claim){
+        return (StoredClaim) claim;
+    }
+
     public void setOwner(Group owner) {
         this.owner = owner;
     }

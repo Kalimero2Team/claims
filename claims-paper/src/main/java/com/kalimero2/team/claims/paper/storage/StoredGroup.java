@@ -12,6 +12,10 @@ public class StoredGroup extends Group {
 
     }
 
+    public static StoredGroup cast(Group group){
+        return (StoredGroup) group;
+    }
+
     public void setName(String name) {
         this.name = name;
     }

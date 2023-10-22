@@ -10,6 +10,10 @@ public class StoredGroupMember extends GroupMember {
         super(player, permissionLevel);
     }
 
+    public static StoredGroupMember cast(GroupMember groupMember){
+        return (StoredGroupMember) groupMember;
+    }
+
     public void setPermissionLevel(PermissionLevel permissionLevel) {
         this.permissionLevel = permissionLevel;
     }

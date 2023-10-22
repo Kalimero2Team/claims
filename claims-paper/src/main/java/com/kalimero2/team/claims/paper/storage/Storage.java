@@ -191,6 +191,46 @@ public class Storage {
         }
     }
 
+    public boolean saveClaim(Claim claim) {
+        try {
+            connection.setAutoCommit(false);
+            executeUpdate("UPDATE CLAIMS SET LAST_INTERACTION = ?, LAST_ONLINE = ? WHERE ID = ?", claim.getLastInteraction(), claim.getLastOnline(), claim.getId());
+            Group owner = claim.getOwner();
+            HashMap<Flag, Boolean> flags = claim.getFlags();
+            List<MaterialInteractable> blockInteractables = claim.getMaterialInteractables();
+            List<EntityInteractable> entityInteractables = claim.getEntityInteractables();
+            List<Group> members = claim.getMembers();
+
+            // Update Owner
+            executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE ID = ?", owner.getId(), claim.getId());
+            // Update Flags
+            executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
+            for (Flag flag : flags.keySet()) {
+                executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), flags.get(flag));
+            }
+            // Update Block Interactables
+            executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+            for (MaterialInteractable interactable : blockInteractables) {
+                executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), interactable.getBlockMaterial().name(), interactable.canInteract());
+            }
+            // Update Entity Interactables
+            executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+            for (EntityInteractable interactable : entityInteractables) {
+                executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), interactable.getEntityType().name(), interactable.canInteract(), interactable.canDamage());
+            }
+            // Update Members
+            executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
+            for (Group member : members) {
+                executeUpdate("INSERT OR IGNORE INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), member.getId());
+            }
+            connection.commit();
+            connection.setAutoCommit(true);
+            return true;
+        } catch (SQLException ignored) {
+            return false;
+        }
+    }
+
     private @Nullable HashMap<Flag, Boolean> getFlags(int claimId) {
         try {
             HashMap<Flag, Boolean> flags = new HashMap<>();

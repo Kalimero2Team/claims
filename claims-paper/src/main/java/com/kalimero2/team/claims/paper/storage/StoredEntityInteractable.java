@@ -8,6 +8,10 @@ public class StoredEntityInteractable extends EntityInteractable {
         super(entityType, interact, damage);
     }
 
+    public static StoredEntityInteractable cast(EntityInteractable entityInteractable){
+        return (StoredEntityInteractable) entityInteractable;
+    }
+
     public void setInteract(boolean interact) {
         this.interact = interact;
     }
