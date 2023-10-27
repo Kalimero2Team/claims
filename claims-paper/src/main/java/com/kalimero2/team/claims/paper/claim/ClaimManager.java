@@ -4,6 +4,7 @@ import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.event.ChunkClaimedEvent;
 import com.kalimero2.team.claims.api.event.ChunkUnclaimedEvent;
+import com.kalimero2.team.claims.api.event.ClaimOwnerChangeEvent;
 import com.kalimero2.team.claims.api.event.flag.FlagSetEvent;
 import com.kalimero2.team.claims.api.event.flag.FlagUnsetEvent;
 import com.kalimero2.team.claims.api.event.group.GroupMemberPermissionLevelChangeEvent;
@@ -376,6 +377,12 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public void setOwner(Chunk chunk, Group target) {
+        Claim claim2 = getClaim(chunk);
+        if(claim2 != null){
+            Group owner = claim2.getOwner();
+            new ClaimOwnerChangeEvent(chunk, owner, target, claim2).callEvent();
+        }
+
         if (loadedClaims.containsKey(chunk)) {
             Claim claim = loadedClaims.get(chunk);
             if (claim != null) {

@@ -3,6 +3,8 @@ package com.kalimero2.team.claims.squaremap.hook;
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.event.ChunkClaimedEvent;
+import com.kalimero2.team.claims.api.event.ChunkUnclaimedEvent;
+import com.kalimero2.team.claims.api.event.ClaimOwnerChangeEvent;
 import com.kalimero2.team.claims.api.flag.Flag;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -19,16 +21,16 @@ public final class ClaimsHook implements Listener {
     private static final HashMap<World, List<Claim>> claims = new HashMap<>();
     public static final Flag TEAM_FLAG = Flag.of(new NamespacedKey("map", "team"), false, true);
 
-    public static void registerFlag(){
+    public static void registerFlag() {
         api.registerFlag(TEAM_FLAG);
     }
 
-    public static void registerListener(Plugin plugin){
+    public static void registerListener(Plugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(new ClaimsHook(), plugin);
     }
 
     public static List<Claim> getClaims(World world) {
-        if(claims.containsKey(world)){
+        if (claims.containsKey(world)) {
             return claims.get(world);
         }
         List<Claim> claimsInWorld = api.getClaims(world);
@@ -37,20 +39,29 @@ public final class ClaimsHook implements Listener {
     }
 
     @EventHandler
-    public void onChunkClaim(ChunkClaimedEvent event){
+    public void onChunkClaim(ChunkClaimedEvent event) {
         World world = event.getChunk().getWorld();
-        if(claims.containsKey(world)){
+        if (claims.containsKey(world)) {
             claims.get(world).add(event.getClaim());
-        }else {
+        } else {
             claims.put(world, List.of(event.getClaim()));
         }
     }
 
     @EventHandler
-    public void onChunkUnclaim(ChunkClaimedEvent event){
+    public void onChunkUnclaim(ChunkUnclaimedEvent event) {
         World world = event.getChunk().getWorld();
-        if(claims.containsKey(world)){
-            claims.get(world).remove(event.getClaim());
+        if (claims.containsKey(world)) {
+            claims.get(world).removeIf(claim -> claim.getChunk().equals(event.getChunk()));
+        }
+    }
+
+    @EventHandler
+    public void onClaimOwnerChangeEvent(ClaimOwnerChangeEvent event) {
+        World world = event.getChunk().getWorld();
+        if (claims.containsKey(world)) {
+            claims.get(world).removeIf(claim -> claim.getChunk().equals(event.getChunk()));
+            claims.get(world).add(event.getClaim());
         }
     }
 }
