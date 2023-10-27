@@ -142,7 +142,7 @@ public class ChunkAdminCommands extends CommandHandler {
             if (claim != null) {
                 Group target = context.get("target");
                 api.setOwner(player.getChunk(), target);
-                plugin.getMessageUtil().sendMessage(player, "chunk.admin.set_owner", Placeholder.unparsed("target", target.toString()));
+                plugin.getMessageUtil().sendMessage(player, "chunk.admin.set_owner", Placeholder.unparsed("target", target.getName()));
             } else {
                 plugin.getMessageUtil().sendMessage(player, "chunk.generic.fail_chunk_not_claimed");
             }
