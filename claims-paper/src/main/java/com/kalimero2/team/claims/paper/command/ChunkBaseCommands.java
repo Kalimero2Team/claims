@@ -3,6 +3,7 @@ package com.kalimero2.team.claims.paper.command;
 import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.api.Claim;
+import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
@@ -16,6 +17,8 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class ChunkBaseCommands extends CommandHandler {
@@ -72,7 +75,10 @@ public class ChunkBaseCommands extends CommandHandler {
             int end = Math.min(start + 10, claims.size());
             claims = claims.subList(start, end);
 
-            messageUtil.sendMessage(player, "chunk.list.header");
+            messageUtil.sendMessage(player, "chunk.list.header",
+                    Placeholder.unparsed("count", String.valueOf(claims.size()))
+            );
+
             for (Claim claim : claims) {
                 Chunk chunk = claim.getChunk();
                 Block block = chunk.getBlock(0, 0, 0);
@@ -185,6 +191,19 @@ public class ChunkBaseCommands extends CommandHandler {
                     messageUtil.sendMessage(player, "chunk.info.owner", Placeholder.unparsed("player", owner.getName()));
                 } else {
                     messageUtil.sendMessage(player, "chunk.info.owner_group", Placeholder.unparsed("group", owner.getName()));
+                }
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat(messageUtil.getMessageBundle().getString("generic.date_format"));
+                messageUtil.sendMessage(player, "chunk.info.claimed_since",
+                        Placeholder.unparsed("date", dateFormat.format(new Date(claim.getClaimedSince())))
+                );
+
+                if(api.getFlagState(claim, ClaimsFlags.NO_EXPIRATION)){
+                    messageUtil.sendMessage(player, "chunk.info.expire_disabled");
+                }else {
+                    messageUtil.sendMessage(player, "chunk.info.expires",
+                        Placeholder.unparsed("date", dateFormat.format(new Date(claim.getClaimedSince()))) // TODO: Implement expiration
+                    );
                 }
 
                 List<Group> players = claim.getMembers().stream().filter(Group::isPlayer).toList();

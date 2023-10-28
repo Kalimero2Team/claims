@@ -190,7 +190,7 @@ public class ChunkProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (event.isCancelled()) return;
 
@@ -260,9 +260,10 @@ public class ChunkProtectionListener implements Listener {
         } else if (target instanceof Player) {
             if (claim != null) {
                 boolean pvpOn = api.getFlagState(claim, ClaimsFlags.PVP);
-                event.setCancelled(!pvpOn);
+                if(!pvpOn) {
+                    event.setCancelled(true);
+                }
             }
-            event.setCancelled(true);
         } else if (target instanceof Animals || target instanceof NPC || target instanceof Hanging || target instanceof ArmorStand || target instanceof Vehicle) {
             if (shouldCancel(player, target.getChunk())) {
                 event.setCancelled(true);
@@ -439,7 +440,6 @@ public class ChunkProtectionListener implements Listener {
         if (event.getCause().equals(BlockIgniteEvent.IgniteCause.ARROW)) {
             Claim claim = api.getClaim(event.getBlock().getChunk());
             if (shouldCancel(event.getPlayer(), claim)) {
-                // TODO: Check for BlockInteractable state
                 if (claim.getMaterialInteractables().stream().map(MaterialInteractable::getBlockMaterial).toList().contains(Material.CAMPFIRE)) {
                     event.setCancelled(true);
                 }

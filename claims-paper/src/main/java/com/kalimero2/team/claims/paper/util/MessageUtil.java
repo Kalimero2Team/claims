@@ -44,4 +44,7 @@ public class MessageUtil {
         return MiniMessage.miniMessage().deserialize(messageBundle.getString(key), placeholders.toArray(new TagResolver[0]));
     }
 
+    public ResourceBundle getMessageBundle() {
+        return messageBundle;
+    }
 }

@@ -191,7 +191,11 @@ public class GroupCommands extends CommandHandler {
             int end = Math.min(start + 10, claims.size());
             claims = claims.subList(start, end);
 
-            messageUtil.sendMessage(player, "chunk.list.header_other", Placeholder.unparsed("target", group.getName()));
+            messageUtil.sendMessage(player, "chunk.list.header_other",
+                    Placeholder.unparsed("target", group.getName()),
+                    Placeholder.unparsed("count", String.valueOf(claims.size()))
+            );
+
             for (Claim claim : claims) {
                 Chunk chunk = claim.getChunk();
                 Block block = chunk.getBlock(0, 0, 0);
