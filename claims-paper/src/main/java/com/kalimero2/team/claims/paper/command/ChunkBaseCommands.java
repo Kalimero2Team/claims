@@ -146,7 +146,7 @@ public class ChunkBaseCommands extends CommandHandler {
                 }
 
 
-                if (claims <= maxClaims) {
+                if (claims < maxClaims) {
                     if (api.claimChunk(player.getChunk(), group)) {
                         if (group.isPlayer()) {
                             plugin.getMessageUtil().sendMessage(player, "chunk.claim.success");
