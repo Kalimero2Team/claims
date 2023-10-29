@@ -17,6 +17,7 @@ import com.kalimero2.team.claims.api.group.PermissionLevel;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.paper.PaperClaims;
+import com.kalimero2.team.claims.paper.command.ChunkAdminCommands;
 import com.kalimero2.team.claims.paper.storage.Storage;
 import com.kalimero2.team.claims.paper.storage.StoredBlockInteractable;
 import com.kalimero2.team.claims.paper.storage.StoredClaim;
@@ -402,7 +403,7 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (playerGroup == null) {
             storage.createPlayerGroup(event.getPlayer(), plugin.getConfig().getInt("claims.max-claims"));
         }else {
-            storage.updateLastSeen(playerGroup);
+            getGroups(event.getPlayer()).forEach(storage::updateLastSeen);
             if(!event.getPlayer().getName().equals(playerGroup.getName())){
                 storage.renameGroup(playerGroup, event.getPlayer().getName());
                 plugin.getLogger().info("Renamed PlayerGroup " + playerGroup.getName() + " to " + event.getPlayer().getName());
@@ -413,6 +414,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         getGroups(event.getPlayer()).forEach(storage::updateLastSeen);
+        ChunkAdminCommands.forcedPlayers.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
