@@ -7,7 +7,9 @@ import com.kalimero2.team.claims.api.event.ChunkUnclaimedEvent;
 import com.kalimero2.team.claims.api.event.ClaimOwnerChangeEvent;
 import com.kalimero2.team.claims.api.event.flag.FlagSetEvent;
 import com.kalimero2.team.claims.api.event.flag.FlagUnsetEvent;
+import com.kalimero2.team.claims.api.event.group.GroupAddMemberEvent;
 import com.kalimero2.team.claims.api.event.group.GroupMemberPermissionLevelChangeEvent;
+import com.kalimero2.team.claims.api.event.group.GroupRemoveMemberEvent;
 import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
@@ -183,17 +185,14 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public boolean setPermissionLevel(Group group, GroupMember member, PermissionLevel level) {
         GroupMemberPermissionLevelChangeEvent groupMemberPermissionLevelChangeEvent = new GroupMemberPermissionLevelChangeEvent(group, member, member.getPermissionLevel(), level);
-
-        if (groupMemberPermissionLevelChangeEvent.callEvent()) {
-            boolean success = storage.setPermissionLevel(group, member, level);
-            StoredGroupMember storedGroupMember = StoredGroupMember.cast(member);
-            storedGroupMember.setPermissionLevel(level);
-            StoredGroup.cast(group).removeMember(member);
-            StoredGroup.cast(group).addMember(storedGroupMember);
-            refreshGroupInLoadedClaims(group);
-            return success;
-        }
-        return false;
+        groupMemberPermissionLevelChangeEvent.callEvent();
+        boolean success = storage.setPermissionLevel(group, member, level);
+        StoredGroupMember storedGroupMember = StoredGroupMember.cast(member);
+        storedGroupMember.setPermissionLevel(level);
+        StoredGroup.cast(group).removeMember(member);
+        StoredGroup.cast(group).addMember(storedGroupMember);
+        refreshGroupInLoadedClaims(group);
+        return success;
     }
 
     @Override
@@ -202,6 +201,8 @@ public class ClaimManager implements ClaimsApi, Listener {
             GroupMember groupMember = storage.getGroupMember(group, player);
             StoredGroup.cast(group).addMember(groupMember);
             refreshGroupInLoadedClaims(group);
+            GroupAddMemberEvent groupAddMemberEvent = new GroupAddMemberEvent(group, groupMember);
+            groupAddMemberEvent.callEvent();
             return groupMember;
         }
         return null;
@@ -233,6 +234,8 @@ public class ClaimManager implements ClaimsApi, Listener {
         boolean success = storage.removeGroupMember(group, member);
         StoredGroup.cast(group).removeMember(member);
         refreshGroupInLoadedClaims(group);
+        GroupRemoveMemberEvent groupRemoveMemberEvent = new GroupRemoveMemberEvent(group, member);
+        groupRemoveMemberEvent.callEvent();
         return success;
     }
 
