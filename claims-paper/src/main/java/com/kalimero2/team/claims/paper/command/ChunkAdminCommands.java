@@ -1,9 +1,12 @@
 package com.kalimero2.team.claims.paper.command;
 
+import cloud.commandframework.arguments.standard.BooleanArgument;
 import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.api.Claim;
+import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
+import com.kalimero2.team.claims.paper.command.argument.FlagArgument;
 import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
 import com.kalimero2.team.claims.paper.command.argument.PlayerGroupArgument;
 import net.kyori.adventure.text.Component;
@@ -50,7 +53,7 @@ public class ChunkAdminCommands extends CommandHandler {
                         .literal("admin")
                         .literal("setowner")
                         .literal("group")
-                        .permission("claims.admin.setOwner")
+                        .permission("claims.admin.setowner")
                         .argument(GroupArgument.of("target"))
                         .handler(this::setOwner)
         );
@@ -59,7 +62,7 @@ public class ChunkAdminCommands extends CommandHandler {
                         .literal("admin")
                         .literal("setowner")
                         .literal("player")
-                        .permission("claims.admin.setOwner")
+                        .permission("claims.admin.setowner")
                         .argument(PlayerGroupArgument.of("target"))
                         .handler(this::setOwner)
         );
@@ -111,7 +114,7 @@ public class ChunkAdminCommands extends CommandHandler {
                         .literal("limit")
                         .literal("add")
                         .literal("group")
-                        .permission("claims.admin.limit.get")
+                        .permission("claims.admin.limit.set")
                         .argument(GroupArgument.of("target"))
                         .argument(IntegerArgument.of("limit"))
                         .handler(this::addToLimit)
@@ -122,10 +125,33 @@ public class ChunkAdminCommands extends CommandHandler {
                         .literal("limit")
                         .literal("add")
                         .literal("player")
-                        .permission("claims.admin.limit.get")
-                        .argument(GroupArgument.of("target"))
+                        .permission("claims.admin.limit.set")
+                        .argument(PlayerGroupArgument.of("target"))
                         .argument(IntegerArgument.of("limit"))
                         .handler(this::addToLimit)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("batch")
+                        .literal("flag")
+                        .literal("set")
+                        .permission("claims.admin.batch.flag")
+                        .argument(GroupArgument.of("target"))
+                        .argument(FlagArgument.of("flag"))
+                        .argument(BooleanArgument.of("state"))
+                        .handler(this::batchFlagSet)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("batch")
+                        .literal("flag")
+                        .literal("unset")
+                        .permission("claims.admin.batch.flag")
+                        .argument(GroupArgument.of("target"))
+                        .argument(FlagArgument.of("flag"))
+                        .handler(this::batchFlagUnset)
         );
     }
 
@@ -245,5 +271,37 @@ public class ChunkAdminCommands extends CommandHandler {
                 Placeholder.unparsed("old_count", String.valueOf(oldLimit)),
                 Placeholder.unparsed("target", target.getName())
         );
+    }
+
+
+    private void batchFlagSet(CommandContext<CommandSender> context) {
+        Flag flag = context.get("flag");
+        Group group = context.get("target");
+        Boolean state = context.get("state");
+
+        if(flag.getPermission() != null && !context.hasPermission(flag.getPermission())){
+            messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
+            return;
+        }
+
+        api.getClaims(group).forEach(claim -> {
+            api.setFlagState(claim, flag, state);
+            messageUtil.sendMessage(context.getSender(), "chunk.flag.set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
+        });
+    }
+
+    private void batchFlagUnset(CommandContext<CommandSender> context) {
+        Flag flag = context.get("flag");
+        Group group = context.get("target");
+
+        if(flag.getPermission() != null && !context.hasPermission(flag.getPermission())){
+            messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
+            return;
+        }
+
+        api.getClaims(group).forEach(claim -> {
+            api.unsetFlagState(claim, flag);
+            messageUtil.sendMessage(context.getSender(), "chunk.flag.unset_success", Placeholder.unparsed("flag", flag.getKeyString()));
+        });
     }
 }
