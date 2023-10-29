@@ -162,7 +162,7 @@ public class ChunkAdminCommands extends CommandHandler {
                 commandManager.commandBuilder("chunk")
                         .literal("admin")
                         .literal("force")
-                        .literal("claims.admin.force")
+                        .permission("claims.admin.force")
                         .handler(this::toggleForceMode)
         );
     }
