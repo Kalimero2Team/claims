@@ -67,6 +67,38 @@ public class Storage {
 
 
     private void createTablesIfNotExists() throws SQLException {
+        if(!plugin.getConfig().contains("database-version", true)){
+            plugin.getConfig().set("database-version", 1);
+
+            plugin.getLogger().info("Migrating Database to version 1");
+            // make name of groups not unique
+            connection.setAutoCommit(false);
+            executeUpdate("ALTER TABLE GROUPS RENAME TO GROUPS_OLD;");
+            executeUpdate("CREATE TABLE IF NOT EXISTS GROUPS(" +
+                    "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "NAME VARCHAR(64) NULL," +
+                    "MAX_CLAIMS INTEGER NOT NULL," +
+                    "IS_PLAYER BOOLEAN NOT NULL," +
+                    "UNIQUE (NAME, IS_PLAYER)"+
+                    ");");
+            try{
+                executeUpdate("INSERT INTO GROUPS (ID, NAME, MAX_CLAIMS, IS_PLAYER) SELECT ID, NAME, MAX_CLAIMS, IS_PLAYER FROM GROUPS_OLD;");
+                executeUpdate("DROP TABLE GROUPS_OLD;");
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Error while migrating database to version 1");
+                plugin.getLogger().warning("Error: " + e.getMessage());
+                plugin.getLogger().warning("Rolling back changes and shutting down the server");
+                connection.rollback();
+                plugin.getServer().shutdown();
+                return;
+            }
+
+            connection.commit();
+            connection.setAutoCommit(true);
+
+            plugin.saveConfig();
+            plugin.getLogger().info("Database migrated to version 1");
+        }
 
         //
         // Group related tables
@@ -77,9 +109,10 @@ public class Storage {
 
         executeUpdate("CREATE TABLE IF NOT EXISTS GROUPS(" +
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "NAME VARCHAR(64) UNIQUE NULL," +
+                "NAME VARCHAR(64) NULL," +
                 "MAX_CLAIMS INTEGER NOT NULL," +
-                "IS_PLAYER BOOLEAN NOT NULL" +
+                "IS_PLAYER BOOLEAN NOT NULL," +
+                "UNIQUE (NAME, IS_PLAYER)"+
                 ");");
 
 
@@ -587,15 +620,14 @@ public class Storage {
 
     public Group getGroup(String name) {
         try {
-            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE NAME = ?", name);
+            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE IS_PLAYER = FALSE AND NAME = ?", name);
             if (resultSet.next()) {
                 int id = resultSet.getInt("ID");
                 String groupName = resultSet.getString("NAME");
                 int maxClaims = resultSet.getInt("MAX_CLAIMS");
-                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
                 List<GroupMember> members = getGroupMembers(id);
                 resultSet.close();
-                return new StoredGroup(id, groupName, maxClaims, isPlayer, members);
+                return new StoredGroup(id, groupName, maxClaims, false, members);
             }
             resultSet.close();
 

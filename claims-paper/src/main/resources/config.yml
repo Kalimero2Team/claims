@@ -1,5 +1,7 @@
 language: "en"
 database: "claims.db"
+# Database version, do not change (needed for database migrations)
+database-version: 1
 claims:
   max-groups: 3
   max-claims: 16
