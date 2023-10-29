@@ -8,6 +8,14 @@ java {
     withJavadocJar()
 }
 
+repositories {
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
+}
+
 publishing {
     repositories {
         maven {
@@ -15,7 +23,7 @@ publishing {
             url = if(version.toString().endsWith("-SNAPSHOT")) {
                 uri("https://repo.kalimero2.com/snapshots")
             } else {
-                uri("https://repo.kaliemro2.com/releases")
+                uri("https://repo.kalimero2.com/releases")
             }
             credentials {
                 username = System.getenv("REPO_USERNAME")

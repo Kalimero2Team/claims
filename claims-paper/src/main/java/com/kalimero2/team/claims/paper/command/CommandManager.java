@@ -12,8 +12,11 @@ import java.util.function.UnaryOperator;
 
 public class CommandManager extends PaperCommandManager<CommandSender> {
 
-    public CommandManager() throws Exception {
-        super(PaperClaims.plugin, CommandExecutionCoordinator.simpleCoordinator(), UnaryOperator.identity(), UnaryOperator.identity());
+    public PaperClaims plugin;
+
+    public CommandManager(PaperClaims plugin) throws Exception {
+        super(plugin, CommandExecutionCoordinator.simpleCoordinator(), UnaryOperator.identity(), UnaryOperator.identity());
+        this.plugin = plugin;
 
         if (this.hasCapability(CloudBukkitCapabilities.NATIVE_BRIGADIER)) {
             try {
@@ -23,7 +26,7 @@ public class CommandManager extends PaperCommandManager<CommandSender> {
                     brigManager.setNativeNumberSuggestions(false);
                 }
             } catch (final Exception e) {
-                PaperClaims.plugin.getLogger().warning("Failed to initialize Brigadier support: " + e.getMessage());
+                plugin.getLogger().warning("Failed to initialize Brigadier support: " + e.getMessage());
             }
         }
 
@@ -31,12 +34,13 @@ public class CommandManager extends PaperCommandManager<CommandSender> {
             this.registerAsynchronousCompletions();
         }
 
-        new BaseChunkCommands(this).register();
+        new ChunkBaseCommands(this).register();
         new ChunkAdminCommands(this).register();
         new ChunkBorderCommand(this).register();
-        new ChunkLimitCommands(this).register();
-        new ChunkTrustCommands(this).register();
-        new ChunkIgnoredInteractablesCommands(this).register();
+        new ChunkMemberCommands(this).register();
+        new ChunkFlagCommands(this).register();
+        new ChunkInteractablesCommands(this).register();
+        new GroupCommands(this).register();
 
     }
 

@@ -1,69 +1,69 @@
 package com.kalimero2.team.claims.paper;
 
-import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.ClaimsApiHolder;
-import com.kalimero2.team.claims.paper.claim.ClaimsChunk;
+import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import com.kalimero2.team.claims.paper.command.CommandManager;
-import com.kalimero2.team.claims.paper.listener.ChunkLoadListener;
+import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
+import com.kalimero2.team.claims.paper.listener.ExplosionListener;
+import com.kalimero2.team.claims.paper.listener.ItemListener;
+import com.kalimero2.team.claims.paper.listener.PhysicsListener;
 import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
+import com.kalimero2.team.claims.paper.storage.Storage;
 import com.kalimero2.team.claims.paper.util.ChunkBorders;
 import com.kalimero2.team.claims.paper.util.MessageUtil;
-import com.kalimero2.team.claims.paper.util.SerializableChunk;
-import org.bukkit.World;
-import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.UUID;
+import java.util.Locale;
 
-public class PaperClaims extends JavaPlugin implements ClaimsApi {
-
-    public static PaperClaims plugin;
-    public File playerDataFolder;
+public class PaperClaims extends JavaPlugin {
+    public static ClaimManager api;
     public ChunkBorders chunkBorders;
     private MessageUtil messageUtil;
 
     @Override
     public void onLoad() {
-        if (plugin == null) {
-            plugin = this;
+        saveDefaultConfig();
+
+        Locale locale = Locale.getDefault();
+        String lang = getConfig().getString("language");
+        if (lang != null) {
+            locale = Locale.forLanguageTag(lang);
         }
-        ClaimsApiHolder.setApi(this);
-        plugin.saveDefaultConfig();
-
-        this.messageUtil = new MessageUtil(new File(this.getDataFolder() + "/" + plugin.getConfig().getString("messages")));
-        this.playerDataFolder = new File(this.getDataFolder() + "/playerdata/");
-
-        ConfigurationSerialization.registerClass(SerializableChunk.class);
+        this.messageUtil = new MessageUtil(locale);
     }
 
     @Override
     public void onEnable() {
-        getServer().getPluginManager().registerEvents(new ChunkProtectionListener(), this);
-        getServer().getPluginManager().registerEvents(new ChunkLoadListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerMoveListener(), this);
+        Storage storage = new Storage(this, new File(this.getDataFolder() + "/" + getConfig().getString("database")));
+        api = new ClaimManager(this, storage);
+        ClaimsApiHolder.setApi(api);
+
+        boolean ignored = ClaimsFlags.PVP.getDefaultState(); // This is just to make sure the class is loaded
+
+        getServer().getPluginManager().registerEvents(new ChunkProtectionListener(api), this);
+        getServer().getPluginManager().registerEvents(new PlayerMoveListener(api, this), this);
+        getServer().getPluginManager().registerEvents(new ExplosionListener(api), this); // Flag: EXPLOSIONS
+        getServer().getPluginManager().registerEvents(new PhysicsListener(api), this); // Flag: NO_PHYSICS
+        getServer().getPluginManager().registerEvents(new ItemListener(api), this); // Flag: ITEM_DROP, ITEM_PICKUP
 
         chunkBorders = new ChunkBorders(this);
 
         try {
-            new CommandManager();
+            new CommandManager(this);
             getLogger().info("Commands registered");
         } catch (Exception e) {
             getLogger().warning("Failed to initialize command manager: " + e.getMessage());
         }
     }
 
-    public MessageUtil getMessageUtil() {
-        return messageUtil;
+    @Override
+    public void onDisable() {
+        api.shutdown();
     }
 
-    @Override
-    public com.kalimero2.team.claims.api.ClaimsChunk getChunk(int x, int z, UUID worldUUID) {
-        World world = getServer().getWorld(worldUUID);
-        if (world == null) {
-            return null;
-        }
-        return ClaimsChunk.of(world.getChunkAt(x, z));
+    public MessageUtil getMessageUtil() {
+        return messageUtil;
     }
 }
