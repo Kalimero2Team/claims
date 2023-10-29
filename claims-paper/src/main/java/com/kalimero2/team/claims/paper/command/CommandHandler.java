@@ -26,6 +26,7 @@ public abstract class CommandHandler {
 
     protected boolean permissionCheck(Player player, @Nullable GroupMember groupMember, PermissionLevel permissionLevel) {
         if (ChunkAdminCommands.forcedPlayers.contains(player.getUniqueId())) {
+            messageUtil.sendMessage(player, "chunk.admin.force.warning");
             return true;
         }
         return groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(permissionLevel);
