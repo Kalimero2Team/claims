@@ -309,8 +309,11 @@ public class ChunkAdminCommands extends CommandHandler {
         }
 
         api.getClaims(group).forEach(claim -> {
-            api.setFlagState(claim, flag, state);
-            messageUtil.sendMessage(context.getSender(), "chunk.flag.set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
+            if(api.setFlagState(claim, flag, state)){
+                messageUtil.sendMessage(context.getSender(), "chunk.flag.set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
+            }else {
+                context.getSender().sendMessage("Couldnt set flag :(");
+            }
         });
     }
 

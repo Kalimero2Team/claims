@@ -135,12 +135,18 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public List<Claim> getClaims(World world) {
-        return storage.getClaims(world);
+        List<Claim> claims = storage.getClaims(world);
+        // Replace all claims with loaded claims if they are loaded
+        claims.replaceAll(claim -> loadedClaims.containsValue(claim) ? loadedClaims.get(claim.getChunk()) : claim);
+        return claims;
     }
 
     @Override
     public List<Claim> getClaims(Group group) {
-        return storage.getClaims(group);
+        List<Claim> claims = storage.getClaims(group);
+        // Replace all claims with loaded claims if they are loaded
+        claims.replaceAll(claim -> loadedClaims.containsValue(claim) ? loadedClaims.get(claim.getChunk()) : claim);
+        return claims;
     }
 
     @Override
