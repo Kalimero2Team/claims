@@ -24,4 +24,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: "**/dclink-*/build/libs/*.jar"
+          files: "**/claims-paper/build/libs/claims-paper-*-all.jar"
