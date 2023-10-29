@@ -267,7 +267,7 @@ public class GroupCommands extends CommandHandler {
                 );
                 return;
             }
-            if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.OWNER)) {
+            if (permissionCheck(player, groupMember, PermissionLevel.OWNER)) {
                 if (api.deleteGroup(group)) {
                     messageUtil.sendMessage(player, "group.delete.success", Placeholder.unparsed("name", group.getName()));
                 } else {
@@ -284,7 +284,7 @@ public class GroupCommands extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
-            if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.OWNER)) {
+            if (permissionCheck(player, groupMember, PermissionLevel.OWNER)) {
                 String oldName = group.getName();
                 String name = context.get("name");
                 if (api.renameGroup(group, name)) {
@@ -302,7 +302,7 @@ public class GroupCommands extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
-            if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
+            if (permissionCheck(player, groupMember, PermissionLevel.MODERATOR)) {
                 OfflinePlayer target = context.get("player");
                 if (api.addGroupMember(group, target, PermissionLevel.MEMBER) != null) {
                     messageUtil.sendMessage(context.getSender(), "group.member.add.success",
@@ -335,7 +335,7 @@ public class GroupCommands extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
-            if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
+            if (permissionCheck(player, groupMember, PermissionLevel.MODERATOR)) {
                 OfflinePlayer target = context.get("player");
                 if (player.equals(target)) {
                     messageUtil.sendMessage(context.getSender(), "group.member.remove.fail_to_remove_self");
@@ -343,7 +343,7 @@ public class GroupCommands extends CommandHandler {
                 }
                 GroupMember targetMember = api.getGroupMember(group, target);
 
-                if (targetMember != null && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
+                if (targetMember != null && groupMember != null && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.remove.fail_to_remove_higher",
                             Placeholder.unparsed("player", target.getName())
                     );
@@ -394,7 +394,7 @@ public class GroupCommands extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
-            if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+            if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                 OfflinePlayer target = context.get("player");
                 if (player.equals(target)) {
                     messageUtil.sendMessage(context.getSender(), "group.member.promote.fail_to_promote_self");
@@ -404,14 +404,14 @@ public class GroupCommands extends CommandHandler {
 
                 assert targetMember != null;
 
-                if (targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
+                if (groupMember != null && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.promote.fail_higher_level", Placeholder.unparsed("player", target.getName()));
                     return;
                 }
 
                 PermissionLevel next = targetMember.getPermissionLevel().next();
 
-                if (next.isHigherOrEqual(groupMember.getPermissionLevel())) {
+                if (groupMember != null && next.isHigherOrEqual(groupMember.getPermissionLevel())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.promote.fail_would_equal_or_exceed_own_level",
                             Placeholder.unparsed("player", target.getName()),
                             Placeholder.unparsed("level", next.name().toLowerCase())
@@ -448,7 +448,7 @@ public class GroupCommands extends CommandHandler {
         if (context.getSender() instanceof Player player) {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
-            if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+            if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                 OfflinePlayer target = context.get("player");
                 if (player.equals(target)) {
                     messageUtil.sendMessage(context.getSender(), "group.member.demote.fail_to_demote_self");
@@ -458,7 +458,7 @@ public class GroupCommands extends CommandHandler {
 
                 assert targetMember != null;
 
-                if (targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
+                if (groupMember != null && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.demote.fail_higher_level",
                             Placeholder.unparsed("player", target.getName())
                     );

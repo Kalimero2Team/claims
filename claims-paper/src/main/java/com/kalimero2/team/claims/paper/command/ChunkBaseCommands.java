@@ -118,7 +118,7 @@ public class ChunkBaseCommands extends CommandHandler {
             if (claim != null) {
                 Group owner = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(owner, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                     api.unclaimChunk(player.getChunk());
                     plugin.getMessageUtil().sendMessage(player, "chunk.unclaim.success");
                 } else {

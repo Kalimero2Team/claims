@@ -298,7 +298,6 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public @Nullable Group createGroup(OfflinePlayer owner, String name) {
-        // TODO: Check if a group with the same name (ignoringCase) already exists
         boolean group = storage.createGroup(name, 0, false);
         if (group) {
             return storage.getGroup(name);

@@ -144,7 +144,7 @@ public class ChunkInteractablesCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                     Material material = context.get("material");
                     if (!material.isInteractable()) {
                         messageUtil.sendMessage(player, "chunk.interactable.block.fail_not_interactable");
@@ -185,7 +185,7 @@ public class ChunkInteractablesCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                     Material material = context.get("material");
                     if (claim.getMaterialInteractables().stream().map(MaterialInteractable::getBlockMaterial).toList().contains(material)) {
                         api.removeBlockInteractable(claim, material);
@@ -213,7 +213,7 @@ public class ChunkInteractablesCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                     String entityName = context.get("entity");
                     EntityType entityType = EntityType.valueOf(entityName.toUpperCase());
                     String state = context.get("state");
@@ -255,7 +255,7 @@ public class ChunkInteractablesCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                     String entityName = context.get("entity");
                     EntityType entityType = EntityType.valueOf(entityName.toUpperCase());
                     api.removeEntityInteractable(claim, entityType);

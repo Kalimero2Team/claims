@@ -101,7 +101,7 @@ public class ChunkFlagCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.MODERATOR)) {
                     boolean state = context.get("state");
                     api.setFlagState(claim, flag, state);
                     messageUtil.sendMessage(player, "chunk.flag.set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
@@ -130,7 +130,7 @@ public class ChunkFlagCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.MODERATOR)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.MODERATOR)) {
                     api.unsetFlagState(claim, flag);
                     messageUtil.sendMessage(player, "chunk.flag.unset_success", Placeholder.unparsed("flag", flag.getKeyString()));
                 } else {

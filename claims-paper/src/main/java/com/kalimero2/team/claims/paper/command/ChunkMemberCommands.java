@@ -73,7 +73,7 @@ public class ChunkMemberCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                     Group target = context.get("target");
                     if (claim.getMembers().contains(target)) {
                         plugin.getMessageUtil().sendMessage(player, "chunk.add.fail_already_added",
@@ -100,7 +100,7 @@ public class ChunkMemberCommands extends CommandHandler {
             if (claim != null) {
                 Group group = claim.getOwner();
                 GroupMember groupMember = api.getGroupMember(group, player);
-                if (groupMember != null && groupMember.getPermissionLevel().isHigherOrEqual(PermissionLevel.ADMIN)) {
+                if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                     Group target = context.get("target");
 
                     if(group.equals(target)){

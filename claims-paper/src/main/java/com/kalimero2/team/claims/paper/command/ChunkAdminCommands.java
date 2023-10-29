@@ -18,10 +18,15 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 public class ChunkAdminCommands extends CommandHandler {
+
+    public static final ArrayList<UUID> forcedPlayers = new ArrayList<>();
+
     public ChunkAdminCommands(CommandManager commandManager) {
         super(commandManager);
     }
@@ -153,6 +158,25 @@ public class ChunkAdminCommands extends CommandHandler {
                         .argument(FlagArgument.of("flag"))
                         .handler(this::batchFlagUnset)
         );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("force")
+                        .literal("claims.admin.force")
+                        .handler(this::toggleForceMode)
+        );
+    }
+
+    private void toggleForceMode(CommandContext<CommandSender> context) {
+        if (context.getSender() instanceof Player player) {
+            if (forcedPlayers.contains(player.getUniqueId())) {
+                forcedPlayers.remove(player.getUniqueId());
+                messageUtil.sendMessage(player, "chunk.admin.force.false");
+            } else {
+                forcedPlayers.add(player.getUniqueId());
+                messageUtil.sendMessage(player, "chunk.admin.force.true");
+            }
+        }
     }
 
     private void listClaimsOther(CommandContext<CommandSender> context) {
