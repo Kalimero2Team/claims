@@ -24,4 +24,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: "**/claims-paper/build/libs/claims-paper-*-all.jar"
+          files: |
+            "**/claims-paper/build/libs/claims-paper-*-all.jar"
+            "**/claims-squaremap-integration/build/libs/claims-squaremap-integration-*.jar"
