@@ -125,7 +125,7 @@ public class FlagArgument<C> extends CommandArgument<C, Flag> {
             List<String> output = new ArrayList<>();
 
             for (Flag flag : api.getFlags()) {
-                if(!flag.isAdminOnly() || commandContext.hasPermission("claims.admin.flag")){
+                if(!(flag.getPermission() != null && !commandContext.hasPermission(flag.getPermission()))){
                     output.add(flag.getKeyString());
                 }
             }

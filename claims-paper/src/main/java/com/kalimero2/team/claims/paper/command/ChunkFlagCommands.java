@@ -90,7 +90,7 @@ public class ChunkFlagCommands extends CommandHandler {
     private void flagSet(CommandContext<CommandSender> context) {
         Flag flag = context.get("flag");
 
-        if (flag.isAdminOnly() && !context.getSender().hasPermission("claims.admin.flag")) {
+        if(flag.getPermission() != null && !context.hasPermission(flag.getPermission())){
             messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
             return;
         }
@@ -119,7 +119,7 @@ public class ChunkFlagCommands extends CommandHandler {
     private void flagUnset(CommandContext<CommandSender> context) {
         Flag flag = context.get("flag");
 
-        if (flag.isAdminOnly() && !context.getSender().hasPermission("claims.admin.flag")) {
+        if(flag.getPermission() != null && !context.hasPermission(flag.getPermission())){
             messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
             return;
         }

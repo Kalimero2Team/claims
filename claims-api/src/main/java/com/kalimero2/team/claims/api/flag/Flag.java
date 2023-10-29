@@ -1,6 +1,7 @@
 package com.kalimero2.team.claims.api.flag;
 
 import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -29,7 +30,19 @@ public final class Flag {
     }
 
     public String getKeyString() {
-        return key.toString().replace("claims:", ""); // Remove the default namespace
+        return key.toString().replace("claims:", ""); // Removes the default namespace
+    }
+
+    /**
+     * Get the permission for this flag
+     * @return permission or null if this flag is not admin only
+     */
+    @Nullable
+    public String getPermission() {
+        if(isAdminOnly()){
+            return "claims.flag."+getKey().getNamespace()+"."+getKey().getKey();
+        }
+        return null;
     }
 
     public boolean getDefaultState() {

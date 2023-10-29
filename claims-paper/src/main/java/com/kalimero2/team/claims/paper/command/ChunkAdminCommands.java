@@ -5,6 +5,7 @@ import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
+import com.kalimero2.team.claims.paper.command.argument.PlayerGroupArgument;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -28,6 +29,7 @@ public class ChunkAdminCommands extends CommandHandler {
                 commandManager.commandBuilder("chunk")
                         .literal("admin")
                         .literal("listother")
+                        .literal("group")
                         .permission("claims.admin.listother")
                         .argument(GroupArgument.of("target"))
                         .argument(IntegerArgument.optional("page"))
@@ -36,17 +38,37 @@ public class ChunkAdminCommands extends CommandHandler {
         commandManager.command(
                 commandManager.commandBuilder("chunk")
                         .literal("admin")
+                        .literal("listother")
+                        .literal("player")
+                        .permission("claims.admin.listother")
+                        .argument(PlayerGroupArgument.of("target"))
+                        .argument(IntegerArgument.optional("page"))
+                        .handler(this::listClaimsOther)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
                         .literal("setowner")
+                        .literal("group")
                         .permission("claims.admin.setOwner")
                         .argument(GroupArgument.of("target"))
                         .handler(this::setOwner)
         );
-
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("setowner")
+                        .literal("player")
+                        .permission("claims.admin.setOwner")
+                        .argument(PlayerGroupArgument.of("target"))
+                        .handler(this::setOwner)
+        );
         commandManager.command(
                 commandManager.commandBuilder("chunk")
                         .literal("admin")
                         .literal("limit")
                         .literal("set")
+                        .literal("group")
                         .permission("claims.admin.limit.set")
                         .argument(GroupArgument.of("target"))
                         .argument(IntegerArgument.of("limit"))
@@ -56,7 +78,19 @@ public class ChunkAdminCommands extends CommandHandler {
                 commandManager.commandBuilder("chunk")
                         .literal("admin")
                         .literal("limit")
+                        .literal("set")
+                        .literal("player")
+                        .permission("claims.admin.limit.set")
+                        .argument(PlayerGroupArgument.of("target"))
+                        .argument(IntegerArgument.of("limit"))
+                        .handler(this::setLimit)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("limit")
                         .literal("get")
+                        .literal("group")
                         .permission("claims.admin.limit.get")
                         .argument(GroupArgument.of("target"))
                         .handler(this::getLimit)
@@ -65,14 +99,34 @@ public class ChunkAdminCommands extends CommandHandler {
                 commandManager.commandBuilder("chunk")
                         .literal("admin")
                         .literal("limit")
+                        .literal("get")
+                        .literal("player")
+                        .permission("claims.admin.limit.get")
+                        .argument(PlayerGroupArgument.of("target"))
+                        .handler(this::getLimit)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("limit")
                         .literal("add")
+                        .literal("group")
                         .permission("claims.admin.limit.get")
                         .argument(GroupArgument.of("target"))
                         .argument(IntegerArgument.of("limit"))
                         .handler(this::addToLimit)
         );
-
-
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("limit")
+                        .literal("add")
+                        .literal("player")
+                        .permission("claims.admin.limit.get")
+                        .argument(GroupArgument.of("target"))
+                        .argument(IntegerArgument.of("limit"))
+                        .handler(this::addToLimit)
+        );
     }
 
     private void listClaimsOther(CommandContext<CommandSender> context) {

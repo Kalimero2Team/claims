@@ -399,6 +399,12 @@ public class ClaimManager implements ClaimsApi, Listener {
         Group playerGroup = storage.getPlayerGroup(event.getPlayer());
         if (playerGroup == null) {
             storage.createPlayerGroup(event.getPlayer(), plugin.getConfig().getInt("claims.max-claims"));
+        }else {
+            storage.updateLastSeen(playerGroup);
+            if(!event.getPlayer().getName().equals(playerGroup.getName())){
+                storage.renameGroup(playerGroup, event.getPlayer().getName());
+                plugin.getLogger().info("Renamed PlayerGroup " + playerGroup.getName() + " to " + event.getPlayer().getName());
+            }
         }
     }
 

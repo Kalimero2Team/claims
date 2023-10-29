@@ -7,6 +7,7 @@ import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
 import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
+import com.kalimero2.team.claims.paper.command.argument.PlayerGroupArgument;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -22,7 +23,7 @@ public class ChunkMemberCommands extends CommandHandler {
 
     @Override
     public void register() {
-        CommandArgument.Builder<@NonNull CommandSender, @NonNull Group> playerGroupArgument = GroupArgument.<CommandSender>builder("target")
+        CommandArgument.Builder<@NonNull CommandSender, @NonNull Group> playerGroupArgument = PlayerGroupArgument.<CommandSender>builder("target")
                 .withSuggestionsProvider((context, s) -> {
                     List<String> suggestions = new ArrayList<>();
                     for (Group group : api.getGroups()) {
@@ -30,17 +31,6 @@ public class ChunkMemberCommands extends CommandHandler {
                             if (group.getMembers().get(0).getPlayer().isOnline()) {
                                 suggestions.add(group.getName());
                             }
-                        }
-                    }
-                    return suggestions;
-                });
-
-        CommandArgument.Builder<@NonNull CommandSender, @NonNull Group> groupsArgument = GroupArgument.<CommandSender>builder("target")
-                .withSuggestionsProvider((context, s) -> {
-                    List<String> suggestions = new ArrayList<>();
-                    for (Group group : api.getGroups()) {
-                        if (!group.isPlayer()) {
-                            suggestions.add(group.getName());
                         }
                     }
                     return suggestions;
@@ -57,7 +47,7 @@ public class ChunkMemberCommands extends CommandHandler {
                 commandManager.commandBuilder("chunk")
                         .literal("add")
                         .literal("group")
-                        .argument(groupsArgument)
+                        .argument(GroupArgument.of("target"))
                         .handler(this::addMember)
         );
         commandManager.command(
@@ -71,7 +61,7 @@ public class ChunkMemberCommands extends CommandHandler {
                 commandManager.commandBuilder("chunk")
                         .literal("remove")
                         .literal("group")
-                        .argument(groupsArgument)
+                        .argument(GroupArgument.of("target"))
                         .handler(this::removeMember)
         );
     }

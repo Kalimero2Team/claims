@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.Queue;
 import java.util.function.BiFunction;
 
-public class GroupArgument<C> extends CommandArgument<C, Group> {
+public class PlayerGroupArgument<C> extends CommandArgument<C, Group> {
 
     private static final ClaimsApi api = ClaimsApi.getApi();
 
-    protected GroupArgument(
+    protected PlayerGroupArgument(
             final boolean required,
             final @NotNull String name,
             final @NotNull String defaultValue,
@@ -34,12 +34,12 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
                     @NotNull List<@NotNull String>> suggestionsProvider,
             final @NotNull ArgumentDescription defaultDescription
     ) {
-        super(required, name, new GroupArgument.GroupParser<>(), defaultValue, Group.class, suggestionsProvider, defaultDescription);
+        super(required, name, new PlayerGroupArgument.GroupParser<>(), defaultValue, Group.class, suggestionsProvider, defaultDescription);
     }
 
 
-    public static <C> GroupArgument.@NotNull Builder<C> builder(final @NotNull String name) {
-        return new GroupArgument.Builder<>(name);
+    public static <C> PlayerGroupArgument.@NotNull Builder<C> builder(final @NotNull String name) {
+        return new PlayerGroupArgument.Builder<>(name);
     }
 
 
@@ -51,7 +51,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
      * @return Created component
      */
     public static <C> @NotNull CommandArgument<C, Group> of(final @NotNull String name) {
-        return GroupArgument.<C>builder(name).asRequired().build();
+        return PlayerGroupArgument.<C>builder(name).asRequired().build();
     }
 
     /**
@@ -62,7 +62,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
      * @return Created component
      */
     public static <C> @NotNull CommandArgument<C, Group> optional(final @NotNull String name) {
-        return GroupArgument.<C>builder(name).asOptional().build();
+        return PlayerGroupArgument.<C>builder(name).asOptional().build();
     }
 
     public static final class Builder<C> extends CommandArgument.Builder<C, Group> {
@@ -77,8 +77,8 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
          * @return Constructed component
          */
         @Override
-        public @NotNull GroupArgument<C> build() {
-            return new GroupArgument<>(
+        public @NotNull PlayerGroupArgument<C> build() {
+            return new PlayerGroupArgument<>(
                     this.isRequired(),
                     this.getName(),
                     this.getDefaultValue(),
@@ -94,7 +94,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
         public @NotNull ArgumentParseResult<Group> parse(final @NotNull CommandContext<C> commandContext, final @NotNull Queue<@NotNull String> inputQueue) {
             final String input = inputQueue.peek();
             if (input == null) {
-                return ArgumentParseResult.failure(new NoInputProvidedException(GroupArgument.GroupParser.class, commandContext));
+                return ArgumentParseResult.failure(new NoInputProvidedException(PlayerGroupArgument.GroupParser.class, commandContext));
             }
 
             Group group = null;
@@ -104,7 +104,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
             }
 
             if (group == null) {
-                group = api.getGroups().stream().filter(g -> (g.getName().equals(input)) && !g.isPlayer()).findFirst().orElse(null);
+                group = api.getGroups().stream().filter(g -> (g.getName().equals(input) && g.isPlayer())).findFirst().orElse(null);
             }
 
             if (group == null) {
@@ -124,7 +124,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
             List<String> output = new ArrayList<>();
 
             for (Group group : api.getGroups()) {
-                if (!group.isPlayer()) {
+                if (group.isPlayer()) {
                     output.add(group.getName());
                 }
             }
@@ -134,14 +134,14 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
     }
 
     /**
-     * Group parse exception
+     * PlayerGroup parse exception
      */
     public static final class GroupParseException extends ParserException {
 
         private final String input;
 
         /**
-         * Construct a new Group parse exception
+         * Construct a new PlayerGroup parse exception
          *
          * @param input   String input
          * @param context Command context
@@ -151,7 +151,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
                 final @NotNull CommandContext<?> context
         ) {
             super(
-                    GroupArgument.GroupParser.class,
+                    PlayerGroupArgument.GroupParser.class,
                     context,
                     Caption.of("argument.parse.failure.group"),
                     CaptionVariable.of("input", input)
