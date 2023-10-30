@@ -32,7 +32,6 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -101,9 +100,7 @@ public class ChunkProtectionListener implements Listener {
         }
         if (destClaim != null) { // destChunk is claimed
             if (originClaim != null) { // both chunks are claimed
-                if (originClaim.getOwner().equals(destClaim.getOwner())) { // both chunks are claimed by the same group
-                    return false;
-                }
+                return !originClaim.getOwner().equals(destClaim.getOwner()); // both chunks are claimed by different groups -> cancel
             } else {
                 return true; // originChunk is not claimed, dest chunk is claimed
             }
