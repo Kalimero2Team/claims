@@ -325,7 +325,9 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean renameGroup(Group group, String name) {
-        return storage.renameGroup(group, name);
+        boolean renameGroup = storage.renameGroup(group, name);
+        refreshGroupInLoadedClaims(group);
+        return renameGroup;
     }
 
     @Override
@@ -409,7 +411,10 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (playerGroup == null) {
             storage.createPlayerGroup(event.getPlayer(), plugin.getConfig().getInt("claims.max-claims"));
         }else {
-            getGroups(event.getPlayer()).forEach(storage::updateLastSeen);
+            getGroups(event.getPlayer()).forEach(group -> {
+                storage.updateLastSeen(group);
+                refreshGroupInLoadedClaims(group);
+            });
             if(!event.getPlayer().getName().equals(playerGroup.getName())){
                 storage.renameGroup(playerGroup, event.getPlayer().getName());
                 plugin.getLogger().info("Renamed PlayerGroup " + playerGroup.getName() + " to " + event.getPlayer().getName());
@@ -419,7 +424,10 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        getGroups(event.getPlayer()).forEach(storage::updateLastSeen);
+        getGroups(event.getPlayer()).forEach(group -> {
+            storage.updateLastSeen(group);
+            refreshGroupInLoadedClaims(group);
+        });
         ChunkAdminCommands.forcedPlayers.remove(event.getPlayer().getUniqueId());
     }
 

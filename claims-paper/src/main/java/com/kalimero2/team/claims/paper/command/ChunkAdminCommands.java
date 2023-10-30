@@ -202,12 +202,13 @@ public class ChunkAdminCommands extends CommandHandler {
             }
             int start = (page - 1) * 10;
             int end = Math.min(start + 10, claims.size());
-            claims = claims.subList(start, end);
 
             messageUtil.sendMessage(player, "chunk.list.header_other",
                     Placeholder.unparsed("target", target.getName()),
                     Placeholder.unparsed("count", String.valueOf(claims.size()))
             );
+
+            claims = claims.subList(start, end);
 
             for (Claim claim : claims) {
                 Chunk chunk = claim.getChunk();

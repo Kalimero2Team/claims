@@ -197,12 +197,13 @@ public class GroupCommands extends CommandHandler {
             }
             int start = (page - 1) * 10;
             int end = Math.min(start + 10, claims.size());
-            claims = claims.subList(start, end);
 
             messageUtil.sendMessage(player, "chunk.list.header_other",
                     Placeholder.unparsed("target", group.getName()),
                     Placeholder.unparsed("count", String.valueOf(claims.size()))
             );
+
+            claims = claims.subList(start, end);
 
             for (Claim claim : claims) {
                 Chunk chunk = claim.getChunk();
@@ -220,10 +221,10 @@ public class GroupCommands extends CommandHandler {
                 Component prevPage = Component.text("");
 
                 if (page < maxPage) {
-                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page + 1)));
+                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/group claims list " + group.getName() + " " + (page + 1)));
                 }
                 if (page > 1) {
-                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page - 1)));
+                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/group claims list " + group.getName() + " " + (page - 1)));
                 }
                 messageUtil.sendMessage(player, "chunk.list.footer",
                         Placeholder.unparsed("page", String.valueOf(page)),
