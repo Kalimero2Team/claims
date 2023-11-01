@@ -268,7 +268,7 @@ public class GroupCommands extends CommandHandler {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
 
-            int size = api.getClaims(group).size();
+            int size = api.getClaimAmount(group);
             if (size > 0) {
                 messageUtil.sendMessage(player, "group.delete.fail_chunks_still_claimed",
                         Placeholder.unparsed("name", group.getName()),

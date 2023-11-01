@@ -229,33 +229,44 @@ public class Storage {
         try {
             connection.setAutoCommit(false);
             executeUpdate("UPDATE CLAIMS SET LAST_INTERACTION = ?, LAST_ONLINE = ? WHERE ID = ?", claim.getLastInteraction(), claim.getLastOnline(), claim.getId());
+            StoredClaim storedClaim = StoredClaim.cast(claim);
             Group owner = claim.getOwner();
             HashMap<Flag, Boolean> flags = claim.getFlags();
             List<MaterialInteractable> blockInteractables = claim.getMaterialInteractables();
             List<EntityInteractable> entityInteractables = claim.getEntityInteractables();
             List<Group> members = claim.getMembers();
 
-            // Update Owner
-            executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE ID = ?", owner.getId(), claim.getId());
-            // Update Flags
-            executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
-            for (Flag flag : flags.keySet()) {
-                executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), flags.get(flag));
+            if(!storedClaim.originalOwner.equals(owner)){
+                // Update Owner
+                executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE ID = ?", owner.getId(), claim.getId());
             }
-            // Update Block Interactables
-            executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
-            for (MaterialInteractable interactable : blockInteractables) {
-                executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), interactable.getBlockMaterial().name(), interactable.canInteract());
+            if(!storedClaim.originalFlags.equals(flags)){
+                // Update Flags
+                executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
+                for (Flag flag : flags.keySet()) {
+                    executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), flags.get(flag));
+                }
             }
-            // Update Entity Interactables
-            executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
-            for (EntityInteractable interactable : entityInteractables) {
-                executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), interactable.getEntityType().name(), interactable.canInteract(), interactable.canDamage());
+            if(!storedClaim.originalBlockInteractables.equals(blockInteractables)){
+                // Update Block Interactables
+                executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+                for (MaterialInteractable interactable : blockInteractables) {
+                    executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), interactable.getBlockMaterial().name(), interactable.canInteract());
+                }
             }
-            // Update Members
-            executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
-            for (Group member : members) {
-                executeUpdate("INSERT OR IGNORE INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), member.getId());
+            if(!storedClaim.originalEntityInteractables.equals(entityInteractables)){
+                // Update Entity Interactables
+                executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+                for (EntityInteractable interactable : entityInteractables) {
+                    executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), interactable.getEntityType().name(), interactable.canInteract(), interactable.canDamage());
+                }
+            }
+            if(!storedClaim.originalMembers.equals(members)){
+                // Update Members
+                executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
+                for (Group member : members) {
+                    executeUpdate("INSERT OR IGNORE INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), member.getId());
+                }
             }
             connection.commit();
             connection.setAutoCommit(true);
@@ -308,7 +319,7 @@ public class Storage {
             while (resultSet.next()) {
                 String blockIdentifier = resultSet.getString("BLOCK_IDENTIFIER");
                 boolean state = resultSet.getBoolean("STATE");
-                interactables.add(new StoredBlockInteractable(Material.valueOf(blockIdentifier), state));
+                interactables.add(new StoredMaterialInteractable(Material.valueOf(blockIdentifier), state));
             }
             resultSet.close();
 
@@ -572,11 +583,26 @@ public class Storage {
                     continue;
                 }
                 Chunk chunk = world.getChunkAt(resultSet.getInt("CHUNK_X"), resultSet.getInt("CHUNK_Z"));
-                claims.add(getClaimData(chunk));
+                claims.add(ClaimsApi.getApi().getClaim(chunk));
             }
             resultSet.close();
 
             return claims;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public Integer getClaimAmount(Group group){
+        try {
+            ResultSet resultSet = executeQuery("SELECT COUNT(*) FROM CLAIMS WHERE OWNER = ?", group.getId());
+            if(resultSet.next()){
+                int count = resultSet.getInt(1);
+                resultSet.close();
+                return count;
+            }
+            resultSet.close();
+            return 0;
         } catch (SQLException ignored) {
             return null;
         }

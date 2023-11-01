@@ -112,6 +112,14 @@ public interface ClaimsApi {
      */
     List<Claim> getClaims(Group group);
 
+    /**
+     * Gets the amount of claims of a group
+     *
+     * @param group the group to get the claims from
+     * @return the amount of claims of the group
+     */
+    int getClaimAmount(Group group);
+
 
     /**
      * Gets the claims of a player

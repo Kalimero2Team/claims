@@ -142,7 +142,7 @@ public class ChunkBaseCommands extends CommandHandler {
             } else {
                 Group playerGroup = api.getPlayerGroup(player);
                 Group group = context.getOrDefault("group", playerGroup);
-                int claims = api.getClaims(group).size();
+                int claims = api.getClaimAmount(group);
                 int maxClaims = group.getMaxClaims();
 
                 GroupMember member = api.getGroupMember(group, player);
