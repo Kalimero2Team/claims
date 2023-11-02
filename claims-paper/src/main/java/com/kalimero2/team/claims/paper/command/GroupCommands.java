@@ -151,12 +151,18 @@ public class GroupCommands extends CommandHandler {
                 return;
             }
 
-            int maxClaims = api.getPlayerGroup(player).getMaxClaims();
-            int currentClaims = api.getClaims(player).size();
+            Group playerGroup = api.getPlayerGroup(player);
+            int maxClaims = playerGroup.getMaxClaims();
+            int currentClaims = api.getClaimAmount(playerGroup);
 
             int free = maxClaims - currentClaims;
 
-            if (free < 2) {
+            if (free <= 0) {
+                messageUtil.sendMessage(player, "group.claims.transfer.fail_not_enough_claims");
+                return;
+            }
+
+            if (free < amount) {
                 messageUtil.sendMessage(player, "group.claims.transfer.fail_not_enough_claims");
                 return;
             }
@@ -164,7 +170,7 @@ public class GroupCommands extends CommandHandler {
             int newClaimAmount = group.getMaxClaims() + amount;
             api.setMaxClaims(group, newClaimAmount);
 
-            api.setMaxClaims(api.getPlayerGroup(player), maxClaims - amount);
+            api.setMaxClaims(playerGroup, maxClaims - amount);
 
             messageUtil.sendMessage(player, "group.claims.transfer.success",
                     Placeholder.unparsed("group", group.getName()),
