@@ -5,6 +5,7 @@ import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.bukkit.parsers.OfflinePlayerArgument;
 import cloud.commandframework.context.CommandContext;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.group.Group;
@@ -19,9 +20,16 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+
+import static com.kalimero2.team.claims.paper.command.ChunkAdminCommands.forcedPlayers;
 
 public class GroupCommands extends CommandHandler {
 
@@ -143,12 +151,18 @@ public class GroupCommands extends CommandHandler {
                 return;
             }
 
-            int maxClaims = api.getPlayerGroup(player).getMaxClaims();
-            int currentClaims = api.getClaims(player).size();
+            Group playerGroup = api.getPlayerGroup(player);
+            int maxClaims = playerGroup.getMaxClaims();
+            int currentClaims = api.getClaimAmount(playerGroup);
 
             int free = maxClaims - currentClaims;
 
-            if (free < 2) {
+            if (free <= 0) {
+                messageUtil.sendMessage(player, "group.claims.transfer.fail_not_enough_claims");
+                return;
+            }
+
+            if (free < amount) {
                 messageUtil.sendMessage(player, "group.claims.transfer.fail_not_enough_claims");
                 return;
             }
@@ -156,7 +170,7 @@ public class GroupCommands extends CommandHandler {
             int newClaimAmount = group.getMaxClaims() + amount;
             api.setMaxClaims(group, newClaimAmount);
 
-            api.setMaxClaims(api.getPlayerGroup(player), maxClaims - amount);
+            api.setMaxClaims(playerGroup, maxClaims - amount);
 
             messageUtil.sendMessage(player, "group.claims.transfer.success",
                     Placeholder.unparsed("group", group.getName()),
@@ -189,12 +203,13 @@ public class GroupCommands extends CommandHandler {
             }
             int start = (page - 1) * 10;
             int end = Math.min(start + 10, claims.size());
-            claims = claims.subList(start, end);
 
             messageUtil.sendMessage(player, "chunk.list.header_other",
                     Placeholder.unparsed("target", group.getName()),
                     Placeholder.unparsed("count", String.valueOf(claims.size()))
             );
+
+            claims = claims.subList(start, end);
 
             for (Claim claim : claims) {
                 Chunk chunk = claim.getChunk();
@@ -212,10 +227,10 @@ public class GroupCommands extends CommandHandler {
                 Component prevPage = Component.text("");
 
                 if (page < maxPage) {
-                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page + 1)));
+                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/group claims list " + group.getName() + " " + (page + 1)));
                 }
                 if (page > 1) {
-                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/group claim list " + group.getName() + " " + (page - 1)));
+                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/group claims list " + group.getName() + " " + (page - 1)));
                 }
                 messageUtil.sendMessage(player, "chunk.list.footer",
                         Placeholder.unparsed("page", String.valueOf(page)),
@@ -259,7 +274,7 @@ public class GroupCommands extends CommandHandler {
             Group group = context.get("group");
             GroupMember groupMember = api.getGroupMember(group, player);
 
-            int size = api.getClaims(group).size();
+            int size = api.getClaimAmount(group);
             if (size > 0) {
                 messageUtil.sendMessage(player, "group.delete.fail_chunks_still_claimed",
                         Placeholder.unparsed("name", group.getName()),
@@ -306,7 +321,7 @@ public class GroupCommands extends CommandHandler {
                 OfflinePlayer target = context.get("player");
                 if (api.addGroupMember(group, target, PermissionLevel.MEMBER) != null) {
                     messageUtil.sendMessage(context.getSender(), "group.member.add.success",
-                            Placeholder.unparsed("player", target.getName()),
+                            Placeholder.unparsed("player", playerName(target)),
                             Placeholder.unparsed("group", group.getName())
                     );
 
@@ -315,13 +330,13 @@ public class GroupCommands extends CommandHandler {
                         if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.added",
                                     Placeholder.unparsed("group", group.getName()),
-                                    Placeholder.unparsed("player", target.getName())
+                                    Placeholder.unparsed("player", playerName(target))
                             );
                         }
                     });
                 } else {
                     messageUtil.sendMessage(context.getSender(), "group.member.add.fail",
-                            Placeholder.unparsed("player", target.getName()),
+                            Placeholder.unparsed("player", playerName(target)),
                             Placeholder.unparsed("group", group.getName())
                     );
                 }
@@ -337,21 +352,23 @@ public class GroupCommands extends CommandHandler {
             GroupMember groupMember = api.getGroupMember(group, player);
             if (permissionCheck(player, groupMember, PermissionLevel.MODERATOR)) {
                 OfflinePlayer target = context.get("player");
-                if (player.equals(target)) {
-                    messageUtil.sendMessage(context.getSender(), "group.member.remove.fail_to_remove_self");
+                if (!forcedPlayers.contains(player.getUniqueId()) && player.equals(target)) {
+                    messageUtil.sendMessage(context.getSender(), "group.member.remove.fail_to_remove_self",
+                            Placeholder.unparsed("group", group.getName())
+                    );
                     return;
                 }
                 GroupMember targetMember = api.getGroupMember(group, target);
 
-                if (targetMember != null && groupMember != null && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
+                if (targetMember != null && groupMember != null && !forcedPlayers.contains(player.getUniqueId()) && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.remove.fail_to_remove_higher",
-                            Placeholder.unparsed("player", target.getName())
+                            Placeholder.unparsed("player", playerName(target))
                     );
                     return;
                 }
                 if (api.removeGroupMember(group, api.getGroupMember(group, target))) {
                     messageUtil.sendMessage(context.getSender(), "group.member.remove.success",
-                            Placeholder.unparsed("player", target.getName()),
+                            Placeholder.unparsed("player", playerName(target)),
                             Placeholder.unparsed("group", group.getName())
                     );
 
@@ -360,14 +377,14 @@ public class GroupCommands extends CommandHandler {
                         if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.removed",
                                     Placeholder.unparsed("group", group.getName()),
-                                    Placeholder.unparsed("player", target.getName())
+                                    Placeholder.unparsed("player", playerName(target))
                             );
                         }
                     });
                     if (target.getPlayer() != null) {
                         messageUtil.sendMessage(target.getPlayer(), "group.broadcast.removed",
                                 Placeholder.unparsed("group", group.getName()),
-                                Placeholder.unparsed("player", target.getName())
+                                Placeholder.unparsed("player", playerName(target))
                         );
                     }
                 } else {
@@ -384,8 +401,8 @@ public class GroupCommands extends CommandHandler {
         messageUtil.sendMessage(context.getSender(), "group.member.list.header", Placeholder.unparsed("group", group.getName()));
         for (GroupMember member : group.getMembers()) {
             messageUtil.sendMessage(context.getSender(), "group.member.list.entry",
-                    Placeholder.unparsed("player", member.getPlayer().getName()),
-                    Placeholder.parsed("level", "<level_"+member.getPermissionLevel().name().toLowerCase()+">")
+                    Placeholder.unparsed("player", playerName(member.getPlayer())),
+                    Placeholder.parsed("level", "<level_" + member.getPermissionLevel().name().toLowerCase() + ">")
             );
         }
     }
@@ -396,7 +413,7 @@ public class GroupCommands extends CommandHandler {
             GroupMember groupMember = api.getGroupMember(group, player);
             if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                 OfflinePlayer target = context.get("player");
-                if (player.equals(target)) {
+                if (!forcedPlayers.contains(player.getUniqueId()) && player.equals(target)) {
                     messageUtil.sendMessage(context.getSender(), "group.member.promote.fail_to_promote_self");
                     return;
                 }
@@ -404,16 +421,18 @@ public class GroupCommands extends CommandHandler {
 
                 assert targetMember != null;
 
-                if (groupMember != null && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
-                    messageUtil.sendMessage(context.getSender(), "group.member.promote.fail_higher_level", Placeholder.unparsed("player", target.getName()));
+                if (groupMember != null && !forcedPlayers.contains(player.getUniqueId()) && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
+                    messageUtil.sendMessage(context.getSender(), "group.member.promote.fail_higher_level",
+                            Placeholder.unparsed("player", playerName(target))
+                    );
                     return;
                 }
 
                 PermissionLevel next = targetMember.getPermissionLevel().next();
 
-                if (groupMember != null && next.isHigherOrEqual(groupMember.getPermissionLevel())) {
+                if (groupMember != null && !forcedPlayers.contains(player.getUniqueId()) && next.isHigherOrEqual(groupMember.getPermissionLevel())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.promote.fail_would_equal_or_exceed_own_level",
-                            Placeholder.unparsed("player", target.getName()),
+                            Placeholder.unparsed("player", playerName(target)),
                             Placeholder.unparsed("level", next.name().toLowerCase())
                     );
                     return;
@@ -421,7 +440,7 @@ public class GroupCommands extends CommandHandler {
 
                 if (api.setPermissionLevel(group, targetMember, next)) {
                     messageUtil.sendMessage(context.getSender(), "group.member.promote.success",
-                            Placeholder.unparsed("player", target.getName()),
+                            Placeholder.unparsed("player", playerName(target)),
                             Placeholder.unparsed("level", next.name().toLowerCase())
                     );
 
@@ -430,7 +449,7 @@ public class GroupCommands extends CommandHandler {
                         if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.promoted",
                                     Placeholder.unparsed("group", group.getName()),
-                                    Placeholder.unparsed("player", target.getName()),
+                                    Placeholder.unparsed("player", playerName(target)),
                                     Placeholder.unparsed("level", next.name().toLowerCase())
                             );
                         }
@@ -450,7 +469,7 @@ public class GroupCommands extends CommandHandler {
             GroupMember groupMember = api.getGroupMember(group, player);
             if (permissionCheck(player, groupMember, PermissionLevel.ADMIN)) {
                 OfflinePlayer target = context.get("player");
-                if (player.equals(target)) {
+                if (player.equals(target) && !forcedPlayers.contains(player.getUniqueId())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.demote.fail_to_demote_self");
                     return;
                 }
@@ -458,9 +477,9 @@ public class GroupCommands extends CommandHandler {
 
                 assert targetMember != null;
 
-                if (groupMember != null && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
+                if (groupMember != null && !forcedPlayers.contains(player.getUniqueId()) && targetMember.getPermissionLevel().isHigherOrEqual(groupMember.getPermissionLevel())) {
                     messageUtil.sendMessage(context.getSender(), "group.member.demote.fail_higher_level",
-                            Placeholder.unparsed("player", target.getName())
+                            Placeholder.unparsed("player", playerName(target))
                     );
                     return;
                 }
@@ -469,7 +488,7 @@ public class GroupCommands extends CommandHandler {
 
                 if (api.setPermissionLevel(group, targetMember, previous)) {
                     messageUtil.sendMessage(context.getSender(), "group.member.demote.success",
-                            Placeholder.unparsed("player", target.getName()),
+                            Placeholder.unparsed("player", playerName(target)),
                             Placeholder.unparsed("level", previous.name().toLowerCase())
                     );
 
@@ -478,7 +497,7 @@ public class GroupCommands extends CommandHandler {
                         if (memberPlayer != null && !memberPlayer.equals(player)) {
                             messageUtil.sendMessage(memberPlayer, "group.broadcast.demoted",
                                     Placeholder.unparsed("group", group.getName()),
-                                    Placeholder.unparsed("player", target.getName()),
+                                    Placeholder.unparsed("player", playerName(target)),
                                     Placeholder.unparsed("level", previous.name().toLowerCase())
                             );
                         }
@@ -489,6 +508,38 @@ public class GroupCommands extends CommandHandler {
             } else {
                 messageUtil.sendMessage(player, "chunk.generic.fail_no_permission");
             }
+        }
+    }
+
+    private final HashMap<UUID, PlayerProfile> cachedPlayerProfiles = new HashMap<>();
+
+    private @NotNull String playerName(OfflinePlayer offlinePlayer) {
+        if (offlinePlayer.getName() != null) {
+            return offlinePlayer.getName();
+        }
+
+        if (cachedPlayerProfiles.containsKey(offlinePlayer.getUniqueId())) {
+            PlayerProfile playerProfile = cachedPlayerProfiles.get(offlinePlayer.getUniqueId());
+            String name = playerProfile.getName();
+            if (name != null) {
+                return name;
+            }
+        }
+        PlayerProfile playerProfile = offlinePlayer.getPlayerProfile();
+        if (playerProfile.getName() != null) {
+            cachedPlayerProfiles.put(offlinePlayer.getUniqueId(), playerProfile);
+            return playerProfile.getName();
+        } else {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    PlayerProfile newProfile = playerProfile.update().join();
+                    cachedPlayerProfiles.put(offlinePlayer.getUniqueId(), newProfile);
+                    plugin.getLogger().info("Updated player profile for " + newProfile.getName());
+                }
+            }.runTaskAsynchronously(plugin);
+
+            return Objects.requireNonNullElse(playerProfile.getName(), offlinePlayer.getUniqueId().toString());
         }
     }
 }

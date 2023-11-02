@@ -4,8 +4,8 @@ import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.api.group.Group;
-import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import org.bukkit.Chunk;
@@ -32,7 +32,6 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -101,9 +100,7 @@ public class ChunkProtectionListener implements Listener {
         }
         if (destClaim != null) { // destChunk is claimed
             if (originClaim != null) { // both chunks are claimed
-                if (originClaim.getOwner().equals(destClaim.getOwner())) { // both chunks are claimed by the same group
-                    return false;
-                }
+                return !originClaim.getOwner().equals(destClaim.getOwner()); // both chunks are claimed by different groups -> cancel
             } else {
                 return true; // originChunk is not claimed, dest chunk is claimed
             }
@@ -170,7 +167,6 @@ public class ChunkProtectionListener implements Listener {
             }
         }
     }
-
 
 
     @EventHandler
@@ -260,7 +256,7 @@ public class ChunkProtectionListener implements Listener {
         } else if (target instanceof Player) {
             if (claim != null) {
                 boolean pvpOn = api.getFlagState(claim, ClaimsFlags.PVP);
-                if(!pvpOn) {
+                if (!pvpOn) {
                     event.setCancelled(true);
                 }
             }
@@ -340,7 +336,17 @@ public class ChunkProtectionListener implements Listener {
             if (shouldCancel(player, event.getEntity().getChunk())) {
                 event.setCancelled(true);
             }
-        } else if (event.getRemover() instanceof Vehicle) { // Boats can destory hanging entities
+        } else if (event.getRemover() instanceof Projectile projectile) {
+            if (projectile.getShooter() instanceof Player player) {
+                if (shouldCancel(player, event.getEntity().getChunk())) {
+                    event.setCancelled(true);
+                }
+            } else {
+                if (api.getClaim(event.getEntity().getChunk()) != null) {
+                    event.setCancelled(true);
+                }
+            }
+        } else {
             if (api.getClaim(event.getEntity().getChunk()) != null) {
                 event.setCancelled(true);
             }
@@ -491,13 +497,19 @@ public class ChunkProtectionListener implements Listener {
     public void onBlockFertilize(BlockFertilizeEvent event) {
         Chunk originChunk = event.getBlock().getChunk();
 
-        for (BlockState block : event.getBlocks()) {
+        if (shouldCancel(event.getPlayer(), originChunk)) {
+            event.setCancelled(true);
+        }
+
+        event.getBlocks().removeIf(block -> {
             Chunk destChunk = block.getChunk();
 
             if (shouldCancel(originChunk, destChunk)) {
-                event.setCancelled(true);
+                return true;
+            } else {
+                return false;
             }
-        }
+        });
     }
 
     @EventHandler

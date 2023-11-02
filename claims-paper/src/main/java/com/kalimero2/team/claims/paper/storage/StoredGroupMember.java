@@ -6,8 +6,11 @@ import org.bukkit.OfflinePlayer;
 
 public class StoredGroupMember extends GroupMember {
 
+    protected final PermissionLevel originalPermissionLevel;
+
     protected StoredGroupMember(OfflinePlayer player, PermissionLevel permissionLevel) {
         super(player, permissionLevel);
+        this.originalPermissionLevel = permissionLevel;
     }
 
     public static StoredGroupMember cast(GroupMember groupMember){

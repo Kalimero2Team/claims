@@ -97,15 +97,7 @@ public class GroupArgument<C> extends CommandArgument<C, Group> {
                 return ArgumentParseResult.failure(new NoInputProvidedException(GroupArgument.GroupParser.class, commandContext));
             }
 
-            Group group = null;
-            try {
-                group = api.getGroup(Integer.parseInt(input));
-            } catch (NumberFormatException ignored) {
-            }
-
-            if (group == null) {
-                group = api.getGroups().stream().filter(g -> (g.getName().equals(input)) && !g.isPlayer()).findFirst().orElse(null);
-            }
+            Group group = api.getGroups().stream().filter(g -> (g.getName().equals(input)) && !g.isPlayer()).findFirst().orElse(null);
 
             if (group == null) {
                 return ArgumentParseResult.failure(new GroupParseException(input, commandContext));

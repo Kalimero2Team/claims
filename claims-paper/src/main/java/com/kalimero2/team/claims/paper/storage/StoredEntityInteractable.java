@@ -4,8 +4,14 @@ import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import org.bukkit.entity.EntityType;
 
 public class StoredEntityInteractable extends EntityInteractable {
+
+    protected final boolean originalInteract;
+    protected final boolean originalDamage;
+
     public StoredEntityInteractable(EntityType entityType, boolean interact, boolean damage) {
         super(entityType, interact, damage);
+        this.originalInteract = interact;
+        this.originalDamage = damage;
     }
 
     public static StoredEntityInteractable cast(EntityInteractable entityInteractable){

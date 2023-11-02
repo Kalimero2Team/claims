@@ -19,7 +19,7 @@ import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.command.ChunkAdminCommands;
 import com.kalimero2.team.claims.paper.storage.Storage;
-import com.kalimero2.team.claims.paper.storage.StoredBlockInteractable;
+import com.kalimero2.team.claims.paper.storage.StoredMaterialInteractable;
 import com.kalimero2.team.claims.paper.storage.StoredClaim;
 import com.kalimero2.team.claims.paper.storage.StoredEntityInteractable;
 import com.kalimero2.team.claims.paper.storage.StoredGroup;
@@ -147,6 +147,11 @@ public class ClaimManager implements ClaimsApi, Listener {
         // Replace all claims with loaded claims if they are loaded
         claims.replaceAll(claim -> loadedClaims.containsValue(claim) ? loadedClaims.get(claim.getChunk()) : claim);
         return claims;
+    }
+
+    @Override
+    public int getClaimAmount(Group group){
+        return storage.getClaimAmount(group);
     }
 
     @Override
@@ -325,7 +330,9 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean renameGroup(Group group, String name) {
-        return storage.renameGroup(group, name);
+        boolean renameGroup = storage.renameGroup(group, name);
+        refreshGroupInLoadedClaims(group);
+        return renameGroup;
     }
 
     @Override
@@ -333,9 +340,9 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (loadedClaims.containsValue(claim)) {
             MaterialInteractable interactable = StoredClaim.cast(claim).getMaterialInteractables().stream().filter(materialInteractable -> materialInteractable.getBlockMaterial().equals(material)).findFirst().orElse(null);
             if (interactable != null) {
-                StoredBlockInteractable.cast(interactable).setState(state);
+                StoredMaterialInteractable.cast(interactable).setInteractable(state);
             } else {
-                StoredClaim.cast(claim).addMaterialInteractable(new StoredBlockInteractable(material, state));
+                StoredClaim.cast(claim).addMaterialInteractable(new StoredMaterialInteractable(material, state));
             }
         } else {
             storage.setBlockInteractable(claim, material, state);
@@ -409,7 +416,10 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (playerGroup == null) {
             storage.createPlayerGroup(event.getPlayer(), plugin.getConfig().getInt("claims.max-claims"));
         }else {
-            getGroups(event.getPlayer()).forEach(storage::updateLastSeen);
+            getGroups(event.getPlayer()).forEach(group -> {
+                storage.updateLastSeen(group);
+                refreshGroupInLoadedClaims(group);
+            });
             if(!event.getPlayer().getName().equals(playerGroup.getName())){
                 storage.renameGroup(playerGroup, event.getPlayer().getName());
                 plugin.getLogger().info("Renamed PlayerGroup " + playerGroup.getName() + " to " + event.getPlayer().getName());
@@ -419,7 +429,10 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        getGroups(event.getPlayer()).forEach(storage::updateLastSeen);
+        getGroups(event.getPlayer()).forEach(group -> {
+            storage.updateLastSeen(group);
+            refreshGroupInLoadedClaims(group);
+        });
         ChunkAdminCommands.forcedPlayers.remove(event.getPlayer().getUniqueId());
     }
 
@@ -440,6 +453,8 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     public void shutdown() {
+        long startTime = System.nanoTime();
+        plugin.getLogger().info("Saving all claims... (This may take a while)");
         for (Claim claim : loadedClaims.values()) {
             if (claim != null) {
                 storage.saveClaim(claim);
@@ -447,5 +462,6 @@ public class ClaimManager implements ClaimsApi, Listener {
         }
         loadedClaims.clear();
         storage.shutdown();
+        plugin.getLogger().info("Saved all claims in " + (System.nanoTime() - startTime) / 1000000 + "ms");
     }
 }

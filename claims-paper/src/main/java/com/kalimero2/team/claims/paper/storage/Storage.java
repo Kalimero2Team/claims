@@ -6,9 +6,16 @@ import com.kalimero2.team.claims.api.flag.Flag;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
-import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.paper.PaperClaims;
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -21,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,7 +47,26 @@ public class Storage {
 
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dataBase.getPath());
+            String connectionUri = "jdbc:sqlite:" + dataBase.getPath();
+
+            ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectionUri, null);
+            PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+            ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory);
+            poolableConnectionFactory.setPool(connectionPool);
+
+            PoolingDataSource<PoolableConnection> dataSource =
+                    new PoolingDataSource<>(connectionPool);
+
+            connection = dataSource.getConnection();
+
+            /*Statement statement = connection.createStatement();
+            statement.execute("pragma journal_mode = WAL;");
+            statement.execute("pragma synchronous = NORMAL;");
+            statement.execute("pragma temp_store = MEMORY;");
+            statement.execute("pragma mmap_size = 300000000;");
+            statement.execute("pragma page_size = 32768");
+            statement.close();*/
+
             createTablesIfNotExists();
         } catch (ClassNotFoundException | SQLException e) {
             plugin.getSLF4JLogger().error("Error while creating database connection", e);
@@ -67,34 +92,28 @@ public class Storage {
 
 
     private void createTablesIfNotExists() throws SQLException {
-        if(!plugin.getConfig().contains("database-version", true)){
+        if (!plugin.getConfig().contains("database-version", true)) {
             plugin.getConfig().set("database-version", 1);
 
             plugin.getLogger().info("Migrating Database to version 1");
             // make name of groups not unique
-            connection.setAutoCommit(false);
             executeUpdate("ALTER TABLE GROUPS RENAME TO GROUPS_OLD;");
             executeUpdate("CREATE TABLE IF NOT EXISTS GROUPS(" +
                     "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "NAME VARCHAR(64) NULL," +
                     "MAX_CLAIMS INTEGER NOT NULL," +
                     "IS_PLAYER BOOLEAN NOT NULL," +
-                    "UNIQUE (NAME, IS_PLAYER)"+
+                    "UNIQUE (NAME, IS_PLAYER)" +
                     ");");
-            try{
+            try {
                 executeUpdate("INSERT INTO GROUPS (ID, NAME, MAX_CLAIMS, IS_PLAYER) SELECT ID, NAME, MAX_CLAIMS, IS_PLAYER FROM GROUPS_OLD;");
                 executeUpdate("DROP TABLE GROUPS_OLD;");
             } catch (SQLException e) {
                 plugin.getLogger().warning("Error while migrating database to version 1");
                 plugin.getLogger().warning("Error: " + e.getMessage());
-                plugin.getLogger().warning("Rolling back changes and shutting down the server");
-                connection.rollback();
                 plugin.getServer().shutdown();
                 return;
             }
-
-            connection.commit();
-            connection.setAutoCommit(true);
 
             plugin.saveConfig();
             plugin.getLogger().info("Database migrated to version 1");
@@ -112,7 +131,7 @@ public class Storage {
                 "NAME VARCHAR(64) NULL," +
                 "MAX_CLAIMS INTEGER NOT NULL," +
                 "IS_PLAYER BOOLEAN NOT NULL," +
-                "UNIQUE (NAME, IS_PLAYER)"+
+                "UNIQUE (NAME, IS_PLAYER)" +
                 ");");
 
 
@@ -154,7 +173,7 @@ public class Storage {
         executeUpdate("CREATE TABLE IF NOT EXISTS CLAIM_MEMBERS(" +
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
                 "GROUP_ID INTEGER NOT NULL REFERENCES GROUPS(ID)," +
-                "UNIQUE (CLAIM_ID, GROUP_ID)"+
+                "UNIQUE (CLAIM_ID, GROUP_ID)" +
                 ");");
 
 
@@ -165,7 +184,7 @@ public class Storage {
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
                 "FLAG_IDENTIFIER VARCHAR(256) NOT NULL," +
                 "STATE BOOLEAN NOT NULL," +
-                "UNIQUE (CLAIM_ID, FLAG_IDENTIFIER)"+
+                "UNIQUE (CLAIM_ID, FLAG_IDENTIFIER)" +
                 ");");
 
 
@@ -176,7 +195,7 @@ public class Storage {
                 "CLAIM_ID INTEGER NOT NULL REFERENCES CLAIMS(ID)," +
                 "BLOCK_IDENTIFIER VARCHAR(64) NOT NULL," +
                 "STATE BOOLEAN NOT NULL," +
-                "UNIQUE (CLAIM_ID, BLOCK_IDENTIFIER)"+
+                "UNIQUE (CLAIM_ID, BLOCK_IDENTIFIER)" +
                 ");");
 
         // ENTITY_INTERACTABLES
@@ -187,7 +206,7 @@ public class Storage {
                 "ENTITY_IDENTIFIER VARCHAR(64) NOT NULL," +
                 "INTERACT BOOLEAN NOT NULL," +
                 "DAMAGE BOOLEAN NOT NULL," +
-                "UNIQUE (CLAIM_ID, ENTITY_IDENTIFIER)"+
+                "UNIQUE (CLAIM_ID, ENTITY_IDENTIFIER)" +
                 ");");
 
     }
@@ -227,38 +246,46 @@ public class Storage {
 
     public boolean saveClaim(Claim claim) {
         try {
-            connection.setAutoCommit(false);
             executeUpdate("UPDATE CLAIMS SET LAST_INTERACTION = ?, LAST_ONLINE = ? WHERE ID = ?", claim.getLastInteraction(), claim.getLastOnline(), claim.getId());
+            StoredClaim storedClaim = StoredClaim.cast(claim);
             Group owner = claim.getOwner();
             HashMap<Flag, Boolean> flags = claim.getFlags();
             List<MaterialInteractable> blockInteractables = claim.getMaterialInteractables();
             List<EntityInteractable> entityInteractables = claim.getEntityInteractables();
             List<Group> members = claim.getMembers();
 
-            // Update Owner
-            executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE ID = ?", owner.getId(), claim.getId());
-            // Update Flags
-            executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
-            for (Flag flag : flags.keySet()) {
-                executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), flags.get(flag));
+            if (!storedClaim.originalOwner.equals(owner)) {
+                // Update Owner
+                executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE ID = ?", owner.getId(), claim.getId());
             }
-            // Update Block Interactables
-            executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
-            for (MaterialInteractable interactable : blockInteractables) {
-                executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), interactable.getBlockMaterial().name(), interactable.canInteract());
+            if (!storedClaim.originalFlags.equals(flags)) {
+                // Update Flags
+                executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claim.getId());
+                for (Flag flag : flags.keySet()) {
+                    executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), flags.get(flag));
+                }
             }
-            // Update Entity Interactables
-            executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
-            for (EntityInteractable interactable : entityInteractables) {
-                executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), interactable.getEntityType().name(), interactable.canInteract(), interactable.canDamage());
+            if (!storedClaim.originalBlockInteractables.equals(blockInteractables)) {
+                // Update Block Interactables
+                executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+                for (MaterialInteractable interactable : blockInteractables) {
+                    executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), interactable.getBlockMaterial().name(), interactable.canInteract());
+                }
             }
-            // Update Members
-            executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
-            for (Group member : members) {
-                executeUpdate("INSERT OR IGNORE INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), member.getId());
+            if (!storedClaim.originalEntityInteractables.equals(entityInteractables)) {
+                // Update Entity Interactables
+                executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
+                for (EntityInteractable interactable : entityInteractables) {
+                    executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), interactable.getEntityType().name(), interactable.canInteract(), interactable.canDamage());
+                }
             }
-            connection.commit();
-            connection.setAutoCommit(true);
+            if (!storedClaim.originalMembers.equals(members)) {
+                // Update Members
+                executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
+                for (Group member : members) {
+                    executeUpdate("INSERT OR IGNORE INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), member.getId());
+                }
+            }
             return true;
         } catch (SQLException ignored) {
             return false;
@@ -308,7 +335,7 @@ public class Storage {
             while (resultSet.next()) {
                 String blockIdentifier = resultSet.getString("BLOCK_IDENTIFIER");
                 boolean state = resultSet.getBoolean("STATE");
-                interactables.add(new StoredBlockInteractable(Material.valueOf(blockIdentifier), state));
+                interactables.add(new StoredMaterialInteractable(Material.valueOf(blockIdentifier), state));
             }
             resultSet.close();
 
@@ -369,7 +396,7 @@ public class Storage {
                 List<GroupMember> members = getGroupMembers(id);
                 resultSet.close();
                 return new StoredGroup(id, name, maxClaims, isPlayer, members);
-            }else {
+            } else {
                 return null;
             }
         } catch (SQLException ignored) {
@@ -383,7 +410,7 @@ public class Storage {
 
             ResultSet resultSet = executeQuery("SELECT G.ID, G.NAME, G.MAX_CLAIMS, G.IS_PLAYER FROM GROUPS G INNER JOIN GROUP_MEMBERS GM ON G.ID = GM.GROUP_ID WHERE GM.PLAYER = ?", player.getUniqueId().toString());
 
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 int id = resultSet.getInt("ID");
                 String name = resultSet.getString("NAME");
                 int maxClaims = resultSet.getInt("MAX_CLAIMS");
@@ -405,7 +432,7 @@ public class Storage {
 
             ResultSet resultSet = executeQuery("SELECT * FROM GROUPS");
 
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 int id = resultSet.getInt("ID");
                 String name = resultSet.getString("NAME");
                 int maxClaims = resultSet.getInt("MAX_CLAIMS");
@@ -446,7 +473,7 @@ public class Storage {
         }
     }
 
-    public boolean createPlayerGroup(OfflinePlayer player, int maxClaims){
+    public boolean createPlayerGroup(OfflinePlayer player, int maxClaims) {
         try {
             executeUpdate("INSERT INTO GROUPS (NAME, MAX_CLAIMS, IS_PLAYER) VALUES (?, ?, ?)", player.getName(), maxClaims, true);
             executeUpdate("INSERT INTO GROUP_MEMBERS (GROUP_ID, PLAYER, PERMISSION_LEVEL) VALUES ((SELECT ID FROM GROUPS WHERE NAME = ? AND IS_PLAYER = TRUE), ?, ?)", player.getName(), player.getUniqueId().toString(), PermissionLevel.OWNER.getLevel());
@@ -567,16 +594,31 @@ public class Storage {
                 int claim_id = resultSet.getInt("ID");
                 String world_id = resultSet.getString("WORLD");
                 World world = plugin.getServer().getWorld(UUID.fromString(world_id));
-                if(world == null){
-                    plugin.getLogger().warning("World ("+world_id+") not found for claim " + claim_id + " in group " + group.getId());
+                if (world == null) {
+                    plugin.getLogger().warning("World (" + world_id + ") not found for claim " + claim_id + " in group " + group.getId());
                     continue;
                 }
                 Chunk chunk = world.getChunkAt(resultSet.getInt("CHUNK_X"), resultSet.getInt("CHUNK_Z"));
-                claims.add(getClaimData(chunk));
+                claims.add(ClaimsApi.getApi().getClaim(chunk));
             }
             resultSet.close();
 
             return claims;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    public Integer getClaimAmount(Group group) {
+        try {
+            ResultSet resultSet = executeQuery("SELECT COUNT(*) FROM CLAIMS WHERE OWNER = ?", group.getId());
+            if (resultSet.next()) {
+                int count = resultSet.getInt(1);
+                resultSet.close();
+                return count;
+            }
+            resultSet.close();
+            return 0;
         } catch (SQLException ignored) {
             return null;
         }

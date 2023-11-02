@@ -7,14 +7,30 @@ import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import org.bukkit.Chunk;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class StoredClaim extends Claim {
 
+    protected final List<Group> originalMembers;
+    protected final List<MaterialInteractable> originalBlockInteractables;
+    protected final List<EntityInteractable> originalEntityInteractables;
+    protected final HashMap<Flag, Boolean> originalFlags;
+    protected final Group originalOwner;
+    protected final long originalLastOnline;
+    protected final long originalLastInteraction;
+
+
     protected StoredClaim(int id, Group owner, Chunk chunk, List<Group> members, List<MaterialInteractable> blockInteractables, List<EntityInteractable> entityInteractables, HashMap<Flag, Boolean> flags, long claimedSince, long lastInteraction, long lastOnline) {
         super(id, owner, chunk, members, blockInteractables, entityInteractables, flags, claimedSince, lastInteraction, lastOnline);
+        this.originalMembers = new ArrayList<>(members);
+        this.originalBlockInteractables = new ArrayList<>(blockInteractables);
+        this.originalEntityInteractables = new ArrayList<>(entityInteractables);
+        this.originalFlags = new HashMap<>(flags);
+        this.originalOwner = owner;
+        this.originalLastOnline = lastOnline;
+        this.originalLastInteraction = lastInteraction;
     }
 
     public static StoredClaim cast(Claim claim){

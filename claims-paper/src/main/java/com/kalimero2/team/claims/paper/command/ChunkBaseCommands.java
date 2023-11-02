@@ -73,11 +73,12 @@ public class ChunkBaseCommands extends CommandHandler {
             }
             int start = (page - 1) * 10;
             int end = Math.min(start + 10, claims.size());
-            claims = claims.subList(start, end);
 
             messageUtil.sendMessage(player, "chunk.list.header",
                     Placeholder.unparsed("count", String.valueOf(claims.size()))
             );
+
+            claims = claims.subList(start, end);
 
             for (Claim claim : claims) {
                 Chunk chunk = claim.getChunk();
@@ -141,7 +142,7 @@ public class ChunkBaseCommands extends CommandHandler {
             } else {
                 Group playerGroup = api.getPlayerGroup(player);
                 Group group = context.getOrDefault("group", playerGroup);
-                int claims = api.getClaims(group).size();
+                int claims = api.getClaimAmount(group);
                 int maxClaims = group.getMaxClaims();
 
                 GroupMember member = api.getGroupMember(group, player);
