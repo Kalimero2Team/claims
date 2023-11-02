@@ -228,11 +228,12 @@ public class ChunkAdminCommands extends CommandHandler {
                 Component nextPage = Component.text("");
                 Component prevPage = Component.text("");
 
+                String command = "/chunk admin listother " + (target.isPlayer() ? "player " : "group ");
                 if (page < maxPage) {
-                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand("/chunk admin listother " + target.getName() + " " + (page + 1)));
+                    nextPage = Component.text(">").clickEvent(ClickEvent.runCommand(command + target.getName() + " " + (page + 1)));
                 }
                 if (page > 1) {
-                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand("/chunk admin listother " + target.getName() + " " + (page - 1)));
+                    prevPage = Component.text("<").clickEvent(ClickEvent.runCommand(command + target.getName() + " " + (page - 1)));
                 }
                 messageUtil.sendMessage(player, "chunk.list.footer",
                         Placeholder.unparsed("page", String.valueOf(page)),
@@ -304,15 +305,15 @@ public class ChunkAdminCommands extends CommandHandler {
         Group group = context.get("target");
         Boolean state = context.get("state");
 
-        if(flag.getPermission() != null && !context.hasPermission(flag.getPermission())){
-            messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
+        if (flag.getPermission() != null && !context.hasPermission(flag.getPermission())) {
+            messageUtil.sendMessage(context.getSender(), "chunk.generic.fail_no_permission");
             return;
         }
 
         api.getClaims(group).forEach(claim -> {
-            if(api.setFlagState(claim, flag, state)){
+            if (api.setFlagState(claim, flag, state)) {
                 messageUtil.sendMessage(context.getSender(), "chunk.flag.set_success", Placeholder.unparsed("flag", flag.getKeyString()), Placeholder.unparsed("state", String.valueOf(state)));
-            }else {
+            } else {
                 context.getSender().sendMessage("Couldnt set flag :(");
             }
         });
@@ -322,8 +323,8 @@ public class ChunkAdminCommands extends CommandHandler {
         Flag flag = context.get("flag");
         Group group = context.get("target");
 
-        if(flag.getPermission() != null && !context.hasPermission(flag.getPermission())){
-            messageUtil.sendMessage(context.getSender(),"chunk.generic.fail_no_permission");
+        if (flag.getPermission() != null && !context.hasPermission(flag.getPermission())) {
+            messageUtil.sendMessage(context.getSender(), "chunk.generic.fail_no_permission");
             return;
         }
 
