@@ -4,8 +4,8 @@ import com.kalimero2.team.claims.api.Claim;
 import com.kalimero2.team.claims.api.ClaimsApi;
 import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.api.group.Group;
-import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
+import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import org.bukkit.Chunk;
@@ -169,7 +169,6 @@ public class ChunkProtectionListener implements Listener {
     }
 
 
-
     @EventHandler
     public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         if (shouldCancel(event.getPlayer(), event.getRightClicked().getChunk())) {
@@ -257,7 +256,7 @@ public class ChunkProtectionListener implements Listener {
         } else if (target instanceof Player) {
             if (claim != null) {
                 boolean pvpOn = api.getFlagState(claim, ClaimsFlags.PVP);
-                if(!pvpOn) {
+                if (!pvpOn) {
                     event.setCancelled(true);
                 }
             }
@@ -337,7 +336,17 @@ public class ChunkProtectionListener implements Listener {
             if (shouldCancel(player, event.getEntity().getChunk())) {
                 event.setCancelled(true);
             }
-        } else if (event.getRemover() instanceof Vehicle) { // Boats can destory hanging entities
+        } else if (event.getRemover() instanceof Projectile projectile) {
+            if (projectile.getShooter() instanceof Player player) {
+                if (shouldCancel(player, event.getEntity().getChunk())) {
+                    event.setCancelled(true);
+                }
+            } else {
+                if (api.getClaim(event.getEntity().getChunk()) != null) {
+                    event.setCancelled(true);
+                }
+            }
+        } else {
             if (api.getClaim(event.getEntity().getChunk()) != null) {
                 event.setCancelled(true);
             }
@@ -488,7 +497,7 @@ public class ChunkProtectionListener implements Listener {
     public void onBlockFertilize(BlockFertilizeEvent event) {
         Chunk originChunk = event.getBlock().getChunk();
 
-        if(shouldCancel(event.getPlayer(), originChunk)) {
+        if (shouldCancel(event.getPlayer(), originChunk)) {
             event.setCancelled(true);
         }
 
