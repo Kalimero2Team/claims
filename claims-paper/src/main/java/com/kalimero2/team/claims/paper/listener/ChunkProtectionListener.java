@@ -497,7 +497,9 @@ public class ChunkProtectionListener implements Listener {
     public void onBlockFertilize(BlockFertilizeEvent event) {
         Chunk originChunk = event.getBlock().getChunk();
 
-        if (shouldCancel(event.getPlayer(), originChunk)) {
+        Player player = event.getPlayer();
+
+        if (player != null && shouldCancel(player, originChunk)) {
             event.setCancelled(true);
         }
 
