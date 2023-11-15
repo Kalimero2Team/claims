@@ -265,10 +265,11 @@ public class ChunkAdminCommands extends CommandHandler {
         int limit = context.get("limit");
 
         int maxClaims = target.getMaxClaims();
-        api.setMaxClaims(target, maxClaims + limit);
+        int newLimit = maxClaims + limit;
+        api.setMaxClaims(target, newLimit);
 
         plugin.getMessageUtil().sendMessage(context.getSender(), "chunk.admin.limit.add",
-                Placeholder.unparsed("count", String.valueOf(limit)),
+                Placeholder.unparsed("count", String.valueOf(newLimit)),
                 Placeholder.unparsed("old_count", String.valueOf(oldLimit)),
                 Placeholder.unparsed("target", target.getName())
         );
