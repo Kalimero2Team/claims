@@ -134,11 +134,9 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public List<Claim> getClaims(World world) {
-        List<Claim> claims = storage.getClaims(world);
-        // Replace all claims with loaded claims if they are loaded
-        claims.replaceAll(claim -> loadedClaims.containsValue(claim) ? loadedClaims.get(claim.getChunk()) : claim);
-        return claims;
+        return storage.getClaims(world);
     }
 
     @Override
@@ -463,5 +461,9 @@ public class ClaimManager implements ClaimsApi, Listener {
         loadedClaims.clear();
         storage.shutdown();
         plugin.getLogger().info("Saved all claims in " + (System.nanoTime() - startTime) / 1000000 + "ms");
+    }
+
+    public HashMap<Chunk, Claim> getLoadedClaims() {
+        return loadedClaims;
     }
 }
