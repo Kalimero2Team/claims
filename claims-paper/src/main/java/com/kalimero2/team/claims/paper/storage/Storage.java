@@ -9,6 +9,7 @@ import com.kalimero2.team.claims.api.group.PermissionLevel;
 import com.kalimero2.team.claims.api.interactable.EntityInteractable;
 import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.paper.PaperClaims;
+import com.kalimero2.team.claims.paper.claim.ClaimManager;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -738,13 +739,39 @@ public class Storage {
         }
     }
 
+    @Deprecated(forRemoval = true)
     public List<Claim> getClaims(World world) {
         try {
             List<Claim> claims = new ArrayList<>();
             ResultSet resultSet = executeQuery("SELECT * FROM CLAIMS WHERE WORLD = ?", world.getUID().toString());
             while (resultSet.next()) {
-                Chunk chunk = world.getChunkAt(resultSet.getInt("CHUNK_X"), resultSet.getInt("CHUNK_Z"));
-                claims.add(getClaimData(chunk));
+                Chunk chunk = world.getChunkAt(resultSet.getInt("CHUNK_X"), resultSet.getInt("CHUNK_Z"), false);
+
+                ClaimManager claimManager = (ClaimManager) ClaimsApi.getApi();
+                HashMap<Chunk, Claim> loadedClaims = claimManager.getLoadedClaims();
+                if (loadedClaims.containsKey(chunk)) {
+                    claims.add(loadedClaims.get(chunk));
+                    continue;
+                }
+
+                int claim_id = resultSet.getInt("ID");
+
+                // TODO: Implement lazy loading, for members, flags, interactables (flags are currently loaded because they are needed for the squaremap integration)
+
+                StoredClaim storedClaim = new StoredClaim(
+                        claim_id,
+                        getGroup(resultSet.getInt("OWNER")),
+                        chunk,
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        getFlags(claim_id),
+                        resultSet.getLong("CLAIMED_SINCE"),
+                        resultSet.getLong("LAST_INTERACTION"),
+                        resultSet.getLong("LAST_ONLINE")
+                );
+
+                claims.add(storedClaim);
             }
             resultSet.close();
             return claims;

@@ -95,13 +95,13 @@ public interface ClaimsApi {
 
 
     /**
-     * Gets all claims in a world
+     * Gets all claims in a world. (If claim isn't loaded, members and interactables will be empty)
      *
      * @param world the world to get the claims from
      * @return all claims in specified world
      */
+    @Deprecated(forRemoval = true)
     List<Claim> getClaims(World world);
-
 
     /**
      * Gets the claims of a group
