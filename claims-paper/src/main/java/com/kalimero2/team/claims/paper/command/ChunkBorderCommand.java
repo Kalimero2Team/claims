@@ -20,11 +20,11 @@ public class ChunkBorderCommand extends CommandHandler {
 
     private void toggleBorder(CommandContext<CommandSender> context) {
         if (context.getSender() instanceof Player player) {
-            if (ChunkBorders.show_border.contains(player)) {
+            if (ChunkBorders.show_border.containsKey(player)) {
                 ChunkBorders.show_border.remove(player);
                 plugin.getMessageUtil().sendMessage(player, "chunkborder.off");
             } else {
-                ChunkBorders.show_border.add(player);
+                ChunkBorders.show_border.put(player, player.getChunk());
                 plugin.getMessageUtil().sendMessage(player, "chunkborder.on");
             }
         }
