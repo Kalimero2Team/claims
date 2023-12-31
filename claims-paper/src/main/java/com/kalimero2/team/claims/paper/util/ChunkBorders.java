@@ -1,32 +1,41 @@
 package com.kalimero2.team.claims.paper.util;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 public class ChunkBorders implements Listener {
 
-    public static ArrayList<Player> show_border = new ArrayList<>();
+    public static HashMap<Player, Chunk> show_border = new HashMap<>();
 
     public ChunkBorders(Plugin plugin) {
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> show_border.forEach(ChunkBorders::render_particles), 0L, 1L);
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> show_border.forEach(ChunkBorders::render_particles), 0L, 5L);
     }
 
-    private static void render_particles(Player player) {
-        Chunk chunk = player.getLocation().getChunk();
+    private static void render_particles(Player player, Chunk chunk) {
         for (int i = 0; i < 16; i++) {
             player.spawnParticle(Particle.NOTE, chunk.getBlock(i, (int) player.getLocation().getY() + 1, 0).getLocation(), 1);
             player.spawnParticle(Particle.NOTE, chunk.getBlock(i, (int) player.getLocation().getY() + 1, 15).getLocation().add(0, 0, 1), 1);
             player.spawnParticle(Particle.NOTE, chunk.getBlock(0, (int) player.getLocation().getY() + 1, i).getLocation(), 1);
             player.spawnParticle(Particle.NOTE, chunk.getBlock(15, (int) player.getLocation().getY() + 1, i).getLocation().add(1, 0, 0), 1);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        if (show_border.containsKey(event.getPlayer())) {
+            if (!show_border.get(event.getPlayer()).equals(event.getTo().getChunk())) {
+                show_border.put(event.getPlayer(), event.getTo().getChunk());
+            }
         }
     }
 
