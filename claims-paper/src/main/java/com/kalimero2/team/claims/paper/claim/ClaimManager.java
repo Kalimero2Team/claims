@@ -19,11 +19,11 @@ import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import com.kalimero2.team.claims.paper.PaperClaims;
 import com.kalimero2.team.claims.paper.command.ChunkAdminCommands;
 import com.kalimero2.team.claims.paper.storage.Storage;
-import com.kalimero2.team.claims.paper.storage.StoredMaterialInteractable;
 import com.kalimero2.team.claims.paper.storage.StoredClaim;
 import com.kalimero2.team.claims.paper.storage.StoredEntityInteractable;
 import com.kalimero2.team.claims.paper.storage.StoredGroup;
 import com.kalimero2.team.claims.paper.storage.StoredGroupMember;
+import com.kalimero2.team.claims.paper.storage.StoredMaterialInteractable;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -152,7 +152,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     @Override
-    public int getClaimAmount(Group group){
+    public int getClaimAmount(Group group) {
         return storage.getClaimAmount(group);
     }
 
@@ -224,7 +224,7 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     private void refreshGroupInLoadedClaims(Group group) {
         loadedClaims.values().forEach(claim -> {
-            if(claim != null){
+            if (claim != null) {
                 if (claim.getOwner().equals(group)) {
                     StoredClaim storedClaim = StoredClaim.cast(claim);
                     storedClaim.setOwner(group);
@@ -397,7 +397,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public void setOwner(Chunk chunk, Group target) {
         Claim claim2 = getClaim(chunk);
-        if(claim2 != null){
+        if (claim2 != null) {
             Group owner = claim2.getOwner();
             new ClaimOwnerChangeEvent(chunk, owner, target, claim2).callEvent();
         }
@@ -417,12 +417,12 @@ public class ClaimManager implements ClaimsApi, Listener {
         Group playerGroup = storage.getPlayerGroup(event.getPlayer());
         if (playerGroup == null) {
             storage.createPlayerGroup(event.getPlayer(), plugin.getConfig().getInt("claims.max-claims"));
-        }else {
+        } else {
             getGroups(event.getPlayer()).forEach(group -> {
                 storage.updateLastSeen(group);
                 refreshGroupInLoadedClaims(group);
             });
-            if(!event.getPlayer().getName().equals(playerGroup.getName())){
+            if (!event.getPlayer().getName().equals(playerGroup.getName())) {
                 storage.renameGroup(playerGroup, event.getPlayer().getName());
                 plugin.getLogger().info("Renamed PlayerGroup " + playerGroup.getName() + " to " + event.getPlayer().getName());
             }
@@ -448,7 +448,10 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (loadedClaims.containsKey(event.getChunk())) {
             Claim claim = loadedClaims.get(event.getChunk());
             if (claim != null) {
-                storage.saveClaim(claim);
+                boolean saved = storage.saveClaim(claim);
+                if (!saved) {
+                    plugin.getLogger().severe("Could not save claim " + claim.getChunk().getX() + " " + claim.getChunk().getZ());
+                }
             }
             loadedClaims.remove(event.getChunk());
         }
@@ -459,7 +462,10 @@ public class ClaimManager implements ClaimsApi, Listener {
         plugin.getLogger().info("Saving all claims... (This may take a while)");
         for (Claim claim : loadedClaims.values()) {
             if (claim != null) {
-                storage.saveClaim(claim);
+                boolean saved = storage.saveClaim(claim);
+                if (!saved) {
+                    plugin.getLogger().severe("Could not save claim " + claim.getChunk().getX() + " " + claim.getChunk().getZ());
+                }
             }
         }
         loadedClaims.clear();
