@@ -22,7 +22,7 @@ dependencies {
 bukkit {
     main = "com.kalimero2.team.claims.squaremap.SquaremapClaims"
     apiVersion = "1.20"
-    load = BukkitPluginDescription.PluginLoadOrder.POSTWORLD
+    load = BukkitPluginDescription.PluginLoadOrder.STARTUP
     authors = listOf("byquanton")
     depend = listOf("squaremap","claims-paper")
 }
