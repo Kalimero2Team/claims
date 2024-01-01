@@ -10,6 +10,7 @@ public final class ClaimsFlags {
     public static final Flag ITEM_PICKUP = register("item_pickup", true, true);
     public static final Flag NO_PHYSICS = register("no_physics", false, true);
     public static final Flag NO_ENTER_MESSAGE = register("no_enter_message", false, true);
+    public static final Flag MONSTER_SPAWNING = register("monster_spawning", true, true);
     /**
      * Currently defaults to true,but will be changed to false in the future, when expiration is implemented
      */

@@ -7,6 +7,7 @@ import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.paper.listener.ChunkProtectionListener;
 import com.kalimero2.team.claims.paper.listener.ExplosionListener;
 import com.kalimero2.team.claims.paper.listener.ItemListener;
+import com.kalimero2.team.claims.paper.listener.MonsterSpawnListener;
 import com.kalimero2.team.claims.paper.listener.PhysicsListener;
 import com.kalimero2.team.claims.paper.listener.PlayerMoveListener;
 import com.kalimero2.team.claims.paper.storage.Storage;
@@ -47,6 +48,7 @@ public class PaperClaims extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ExplosionListener(api), this); // Flag: EXPLOSIONS
         getServer().getPluginManager().registerEvents(new PhysicsListener(api), this); // Flag: NO_PHYSICS
         getServer().getPluginManager().registerEvents(new ItemListener(api), this); // Flag: ITEM_DROP, ITEM_PICKUP
+        getServer().getPluginManager().registerEvents(new MonsterSpawnListener(api), this); // Flag: MONSTER_SPAWNING
 
         chunkBorders = new ChunkBorders(this);
 
