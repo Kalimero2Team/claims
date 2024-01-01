@@ -301,7 +301,11 @@ public class Storage {
                 String flagIdentifier = resultSet.getString("FLAG_IDENTIFIER");
                 boolean state = resultSet.getBoolean("STATE");
                 Flag flag = ClaimsApi.getApi().getFlag(NamespacedKey.fromString(flagIdentifier));
-                flags.put(flag, state);
+                if (flag == null) {
+                    plugin.getLogger().severe("Flag " + flagIdentifier + " not found for claim " + claimId);
+                } else {
+                    flags.put(flag, state);
+                }
             }
             resultSet.close();
 

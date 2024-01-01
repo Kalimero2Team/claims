@@ -80,16 +80,18 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean getFlagState(Claim claim, Flag flag) {
+        if (flag == null) throw new IllegalArgumentException("Flag cannot be null");
         if (!registeredFlags.containsValue(flag)) {
-            throw new IllegalArgumentException("Flag is not registered");
+            throw new IllegalArgumentException("Flag (" + flag.getKeyString() + ") is not registered");
         }
         return Objects.requireNonNullElseGet(claim.getFlags().get(flag), flag::getDefaultState);
     }
 
     @Override
     public boolean setFlagState(Claim claim, Flag flag, boolean state) {
+        if (flag == null) throw new IllegalArgumentException("Flag cannot be null");
         if (!registeredFlags.containsValue(flag)) {
-            throw new IllegalArgumentException("Flag is not registered");
+            throw new IllegalArgumentException("Flag (" + flag.getKeyString() + ") is not registered");
         }
 
         FlagSetEvent event = new FlagSetEvent(claim, flag, state);
@@ -107,8 +109,9 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public boolean unsetFlagState(Claim claim, Flag flag) {
+        if (flag == null) throw new IllegalArgumentException("Flag cannot be null");
         if (!registeredFlags.containsValue(flag)) {
-            throw new IllegalArgumentException("Flag is not registered");
+            throw new IllegalArgumentException("Flag (" + flag.getKeyString() + ") is not registered");
         }
         FlagUnsetEvent event = new FlagUnsetEvent(claim, flag);
         if (event.callEvent()) {
@@ -128,6 +131,7 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (loadedClaims.containsKey(chunk)) {
             return loadedClaims.get(chunk);
         }
+
         Claim claimData = storage.getClaimData(chunk);
         loadedClaims.put(chunk, claimData);
         return claimData;
