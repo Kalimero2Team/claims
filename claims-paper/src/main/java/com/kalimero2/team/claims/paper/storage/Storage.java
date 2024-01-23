@@ -249,7 +249,6 @@ public class Storage {
 
     public boolean saveClaim(Claim claim) {
         try {
-            executeUpdate("UPDATE CLAIMS SET LAST_INTERACTION = ?, LAST_ONLINE = ? WHERE ID = ?", claim.getLastInteraction(), claim.getLastOnline(), claim.getId());
             StoredClaim storedClaim = StoredClaim.cast(claim);
             Group owner = claim.getOwner();
             HashMap<Flag, Boolean> flags = claim.getFlags();
