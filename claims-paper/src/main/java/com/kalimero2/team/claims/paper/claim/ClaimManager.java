@@ -24,6 +24,7 @@ import com.kalimero2.team.claims.paper.storage.StoredEntityInteractable;
 import com.kalimero2.team.claims.paper.storage.StoredGroup;
 import com.kalimero2.team.claims.paper.storage.StoredGroupMember;
 import com.kalimero2.team.claims.paper.storage.StoredMaterialInteractable;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -36,11 +37,16 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 public class ClaimManager implements ClaimsApi, Listener {
@@ -49,12 +55,17 @@ public class ClaimManager implements ClaimsApi, Listener {
     private final PaperClaims plugin;
     private final HashMap<NamespacedKey, Flag> registeredFlags = new HashMap<>();
     private final HashMap<Chunk, Claim> loadedClaims = new HashMap<>();
+    private final HashMap<Integer, StoredGroup> loadedGroups = new HashMap<>();
 
 
-    public ClaimManager(PaperClaims plugin, Storage storage) {
+    public ClaimManager(PaperClaims plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        this.storage = storage;
+        this.storage = new Storage(plugin, this, new File(plugin.getDataFolder() + "/" + plugin.getConfig().getString("database")));;
         this.plugin = plugin;
+
+        storage.getGroups().forEach(group -> {
+            loadedGroups.put(group.getId(), StoredGroup.cast(group));
+        });
     }
 
     @Override
@@ -157,55 +168,78 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     @Override
-    public List<Group> getGroups(OfflinePlayer player) {
-        return storage.getGroups(player);
+    public List<Group> getGroups(OfflinePlayer player, PermissionLevel permissionLevel) {
+        return loadedGroups.values().stream().filter(
+                group -> group.getMembers().stream().anyMatch(
+                        member -> member.getPlayer().equals(player) && member.getPermissionLevel().isHigherOrEqual(permissionLevel))
+        ).collect(Collectors.toList());
     }
 
     @Override
     public @Nullable Group getGroup(int id) {
-        return storage.getGroup(id);
+        return loadedGroups.get(id);
     }
 
     @Override
     public @Nullable Group getGroup(String name) {
-        return storage.getGroup(name);
+        return loadedGroups.values().stream().filter(group -> group.getName().equals(name)).findFirst().orElse(null);
     }
 
     @Override
     public List<Group> getGroups() {
-        return storage.getGroups();
+        return new ArrayList<>(loadedGroups.values());
     }
 
     @Override
     public Group getPlayerGroup(OfflinePlayer player) {
+        StoredGroup storedGroup = loadedGroups.values().stream().filter(group -> group.isPlayer() && player.equals(getGroupMember(group, player))).findFirst().orElse(null);
+
+        if (storedGroup != null) {
+            if (player.getName() != null && !storedGroup.getName().equals(player.getName())) {
+                if (renameGroup(storedGroup, player.getName())) {
+                    plugin.getLogger().info("Renamed group " + storedGroup.getName() + " to " + player.getName());
+                }else {
+                    plugin.getLogger().severe("Could not rename group " + storedGroup.getName() + " to " + player.getName());
+                }
+            }
+            return storedGroup;
+        }
+
         Group playerGroup = storage.getPlayerGroup(player);
         if (playerGroup == null) {
             if (storage.createPlayerGroup(player, plugin.getConfig().getInt("claims.max-claims"))) {
-                return storage.getPlayerGroup(player);
+                playerGroup = storage.getPlayerGroup(player);
             } else {
                 throw new IllegalStateException("Could not create player group");
             }
         }
+        loadedGroups.put(playerGroup.getId(), StoredGroup.cast(playerGroup));
         return playerGroup;
     }
 
     @Override
     public void setMaxClaims(Group group, int max) {
-        storage.setMaxClaims(group, max);
+        loadedGroups.get(group.getId()).setMaxClaims(max);
         StoredGroup.cast(group).setMaxClaims(max);
         refreshGroupInLoadedClaims(group);
     }
 
     @Override
     public boolean setPermissionLevel(Group group, GroupMember member, PermissionLevel level) {
-        GroupMemberPermissionLevelChangeEvent groupMemberPermissionLevelChangeEvent = new GroupMemberPermissionLevelChangeEvent(group, member, member.getPermissionLevel(), level);
-        groupMemberPermissionLevelChangeEvent.callEvent();
         boolean success = storage.setPermissionLevel(group, member, level);
-        StoredGroupMember storedGroupMember = StoredGroupMember.cast(member);
-        storedGroupMember.setPermissionLevel(level);
-        StoredGroup.cast(group).removeMember(member);
-        StoredGroup.cast(group).addMember(storedGroupMember);
-        refreshGroupInLoadedClaims(group);
+
+        if (success) {
+            GroupMemberPermissionLevelChangeEvent groupMemberPermissionLevelChangeEvent = new GroupMemberPermissionLevelChangeEvent(group, member, member.getPermissionLevel(), level);
+            groupMemberPermissionLevelChangeEvent.callEvent();
+
+            StoredGroupMember storedGroupMember = StoredGroupMember.cast(member);
+            storedGroupMember.setPermissionLevel(level);
+
+            StoredGroup.cast(group).removeMember(member);
+            StoredGroup.cast(group).addMember(storedGroupMember);
+
+            refreshGroupInLoadedClaims(group);
+        }
         return success;
     }
 
@@ -223,6 +257,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     }
 
     private void refreshGroupInLoadedClaims(Group group) {
+        // TODO: This is an ugly hack, and should be removed ...
         loadedClaims.values().forEach(claim -> {
             if (claim != null) {
                 if (claim.getOwner().equals(group)) {
@@ -246,10 +281,14 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public boolean removeGroupMember(Group group, GroupMember member) {
         boolean success = storage.removeGroupMember(group, member);
-        StoredGroup.cast(group).removeMember(member);
-        refreshGroupInLoadedClaims(group);
-        GroupRemoveMemberEvent groupRemoveMemberEvent = new GroupRemoveMemberEvent(group, member);
-        groupRemoveMemberEvent.callEvent();
+
+        if (success) {
+            StoredGroup.cast(group).removeMember(member);
+            refreshGroupInLoadedClaims(group);
+            GroupRemoveMemberEvent groupRemoveMemberEvent = new GroupRemoveMemberEvent(group, member);
+            groupRemoveMemberEvent.callEvent();
+        }
+
         return success;
     }
 
@@ -293,8 +332,9 @@ public class ClaimManager implements ClaimsApi, Listener {
             }
             storedClaim.addMember(group);
             return true;
+        } else {
+            return storage.addGroupToClaim(claim, group);
         }
-        return storage.addGroupToClaim(claim, group);
     }
 
     @Override
@@ -306,15 +346,21 @@ public class ClaimManager implements ClaimsApi, Listener {
             }
             storedClaim.removeMember(group);
             return true;
+        } else {
+            return storage.removeGroupFromClaim(claim, group);
         }
-        return storage.removeGroupFromClaim(claim, group);
     }
 
     @Override
     public @Nullable Group createGroup(OfflinePlayer owner, String name) {
-        boolean group = storage.createGroup(name, 0, false);
-        if (group) {
-            return storage.getGroup(name);
+        boolean created = storage.createGroup(name, 0, false);
+        if (created) {
+            Group group = storage.getGroup(name);
+            if (group == null) {
+                throw new IllegalStateException("Could not create group");
+            }
+            loadedGroups.put(group.getId(), StoredGroup.cast(group));
+            return group;
         }
         return null;
     }
@@ -322,19 +368,35 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public boolean deleteGroup(Group group) {
         List<Claim> claims = getClaims(group);
+
         for (Claim claim : claims) {
             unclaimChunk(claim.getChunk());
             plugin.getLogger().info("Unclaimed chunk " + claim.getChunk().getX() + " " + claim.getChunk().getZ() + " because group " + group.getName() + " was deleted");
         }
 
-        return storage.deleteGroup(group);
+        boolean deleted = storage.deleteGroup(group);
+        if (deleted) {
+            loadedGroups.remove(group.getId());
+        } else {
+            plugin.getLogger().severe("Could not delete group " + group.getName());
+        }
+        return deleted;
     }
 
     @Override
     public boolean renameGroup(Group group, String name) {
-        boolean renameGroup = storage.renameGroup(group, name);
-        refreshGroupInLoadedClaims(group);
-        return renameGroup;
+        boolean isPlayer = group.isPlayer();
+
+        Optional<StoredGroup> groupWithNameExists = loadedGroups.values().stream().filter(
+                group1 -> group1.getName().equals(name) && group1.isPlayer() == isPlayer
+        ).findAny();
+
+        if (groupWithNameExists.isPresent()) {
+            return false;
+        }
+
+        loadedGroups.get(group.getId()).setName(name);
+        return true;
     }
 
     @Override
@@ -369,12 +431,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public void removeBlockInteractable(Claim claim, Material material) {
         if (loadedClaims.containsValue(claim)) {
-            StoredClaim.cast(claim).getMaterialInteractables().stream()
-                    .filter(materialInteractable -> materialInteractable.getBlockMaterial().equals(material))
-                    .findFirst()
-                    .ifPresent(
-                            interactable -> StoredClaim.cast(claim).removeMaterialInteractable(interactable)
-                    );
+            StoredClaim.cast(claim).getMaterialInteractables().stream().filter(materialInteractable -> materialInteractable.getBlockMaterial().equals(material)).findFirst().ifPresent(interactable -> StoredClaim.cast(claim).removeMaterialInteractable(interactable));
         } else {
             storage.removeBlockInteractable(claim, material);
         }
@@ -383,12 +440,7 @@ public class ClaimManager implements ClaimsApi, Listener {
     @Override
     public void removeEntityInteractable(Claim claim, EntityType entityType) {
         if (loadedClaims.containsValue(claim)) {
-            StoredClaim.cast(claim).getEntityInteractables().stream()
-                    .filter(entityInteractable -> entityInteractable.getEntityType().equals(entityType))
-                    .findFirst()
-                    .ifPresent(
-                            interactable -> StoredClaim.cast(claim).removeEntityInteractable(interactable)
-                    );
+            StoredClaim.cast(claim).getEntityInteractables().stream().filter(entityInteractable -> entityInteractable.getEntityType().equals(entityType)).findFirst().ifPresent(interactable -> StoredClaim.cast(claim).removeEntityInteractable(interactable));
         } else {
             storage.removeEntityInteractable(claim, entityType);
         }
@@ -396,17 +448,14 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public void setOwner(Chunk chunk, Group target) {
-        Claim claim2 = getClaim(chunk);
-        if (claim2 != null) {
-            Group owner = claim2.getOwner();
-            new ClaimOwnerChangeEvent(chunk, owner, target, claim2).callEvent();
+        Claim claim = getClaim(chunk);
+        if (claim != null) {
+            Group owner = claim.getOwner();
+            new ClaimOwnerChangeEvent(chunk, owner, target, claim).callEvent();
         }
 
         if (loadedClaims.containsKey(chunk)) {
-            Claim claim = loadedClaims.get(chunk);
-            if (claim != null) {
-                StoredClaim.cast(claim).setOwner(target);
-            }
+            StoredClaim.cast(loadedClaims.get(chunk)).setOwner(target);
         } else {
             storage.setOwner(chunk, target);
         }
@@ -414,18 +463,9 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Group playerGroup = storage.getPlayerGroup(event.getPlayer());
+        Group playerGroup = getPlayerGroup(event.getPlayer());
         if (playerGroup == null) {
-            storage.createPlayerGroup(event.getPlayer(), plugin.getConfig().getInt("claims.max-claims"));
-        } else {
-            getGroups(event.getPlayer()).forEach(group -> {
-                storage.updateLastSeen(group);
-                refreshGroupInLoadedClaims(group);
-            });
-            if (!event.getPlayer().getName().equals(playerGroup.getName())) {
-                storage.renameGroup(playerGroup, event.getPlayer().getName());
-                plugin.getLogger().info("Renamed PlayerGroup " + playerGroup.getName() + " to " + event.getPlayer().getName());
-            }
+            event.getPlayer().kick(Component.text("Could not create player group. Please contact an administrator"));
         }
     }
 
@@ -469,8 +509,21 @@ public class ClaimManager implements ClaimsApi, Listener {
             }
         }
         loadedClaims.clear();
-        storage.shutdown();
         plugin.getLogger().info("Saved all claims in " + (System.nanoTime() - startTime) / 1000000 + "ms");
+        startTime = System.nanoTime();
+        plugin.getLogger().info("Saving all groups...");
+        for (Group group : loadedGroups.values()) {
+            if (group != null) {
+                boolean saved = storage.saveGroup(group);
+                if (!saved) {
+                    plugin.getLogger().severe("Could not save group " + group.getName());
+                }
+            }
+        }
+        loadedGroups.clear();
+        plugin.getLogger().info("Saved all groups in " + (System.nanoTime() - startTime) / 1000000 + "ms");
+        storage.shutdown();
+
     }
 
     public HashMap<Chunk, Claim> getLoadedClaims() {

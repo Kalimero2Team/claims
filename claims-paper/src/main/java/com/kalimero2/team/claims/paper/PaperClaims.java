@@ -37,8 +37,7 @@ public class PaperClaims extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        Storage storage = new Storage(this, new File(this.getDataFolder() + "/" + getConfig().getString("database")));
-        api = new ClaimManager(this, storage);
+        api = new ClaimManager(this);
         ClaimsApiHolder.setApi(api);
 
         boolean ignored = ClaimsFlags.PVP.getDefaultState(); // This is just to make sure the class is loaded

@@ -40,11 +40,13 @@ import java.util.UUID;
 public class Storage {
 
     private final PaperClaims plugin;
+    private final ClaimManager claimManager;
     private Connection connection;
 
 
-    public Storage(PaperClaims plugin, File dataBase) {
+    public Storage(PaperClaims plugin, ClaimManager claimManager, File dataBase) {
         this.plugin = plugin;
+        this.claimManager = claimManager;
 
         try {
             Class.forName("org.sqlite.JDBC");
@@ -225,7 +227,7 @@ public class Storage {
 
                 return new StoredClaim(
                         claim_id,
-                        getGroup(resultSet.getInt("OWNER")),
+                        claimManager.getGroup(resultSet.getInt("OWNER")),
                         chunk,
                         getMembers(claim_id),
                         getBlockInteractables(claim_id),
@@ -288,10 +290,45 @@ public class Storage {
                 }
             }
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException exception) {
+            plugin.getLogger().severe("Error while saving claim for chunk " + claim.getChunk().getX() + " " + claim.getChunk().getZ() + " with error: " + exception.getMessage());
             return false;
         }
     }
+    
+    public boolean saveGroup(Group group) {
+        try {
+            StoredGroup storedGroup = StoredGroup.cast(group);
+
+            List<GroupMember> members = storedGroup.getMembers();
+            String name = storedGroup.getName();
+            int maxClaims = storedGroup.getMaxClaims();
+
+            if(!storedGroup.originalMembers.equals(members)){
+                // Update Members
+                executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ?", group.getId());
+                for (GroupMember member : members) {
+                    executeUpdate("INSERT OR IGNORE INTO GROUP_MEMBERS (GROUP_ID, PLAYER, PERMISSION_LEVEL) VALUES (?, ?, ?)", group.getId(), member.getPlayer().getUniqueId().toString(), member.getPermissionLevel().getLevel());
+                }
+            }
+
+            if(!storedGroup.originalName.equals(name)){
+                // Update Name
+                executeUpdate("UPDATE GROUPS SET NAME = ? WHERE ID = ?", name, group.getId());
+            }
+
+            if(storedGroup.originalMaxClaims != maxClaims){
+                // Update Max Claims
+                executeUpdate("UPDATE GROUPS SET MAX_CLAIMS = ? WHERE ID = ?", maxClaims, group.getId());
+            }
+
+            return true;
+        }catch (SQLException exception) {
+            plugin.getLogger().severe("Error while saving group " + group.getName() + " with error: " + exception.getMessage());
+            return false;
+        }
+    }
+
 
     private @Nullable HashMap<Flag, Boolean> getFlags(int claimId) {
         try {
@@ -345,27 +382,6 @@ public class Storage {
             resultSet.close();
 
             return interactables;
-        } catch (SQLException ignored) {
-            return null;
-        }
-    }
-
-
-    public StoredGroup getGroup(int id) {
-        try {
-            ResultSet resultSet = executeQuery("SELECT * FROM GROUPS WHERE ID = ?", id);
-            if (resultSet.next()) {
-                int maxClaims = resultSet.getInt("MAX_CLAIMS");
-                String name = resultSet.getString("NAME");
-                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
-                List<GroupMember> members = getGroupMembers(id);
-                resultSet.close();
-
-                return new StoredGroup(id, name, maxClaims, isPlayer, members);
-            }
-            resultSet.close();
-
-            return null;
         } catch (SQLException ignored) {
             return null;
         }
@@ -459,7 +475,7 @@ public class Storage {
             ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim_id);
             while (resultSet.next()) {
                 int group_id = resultSet.getInt("GROUP_ID");
-                members.add(getGroup(group_id));
+                members.add(claimManager.getGroup(group_id));
             }
             resultSet.close();
 
@@ -492,15 +508,6 @@ public class Storage {
         try {
             executeUpdate("DELETE FROM GROUPS WHERE ID = ?", group.getId());
             executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ?", group.getId());
-            return true;
-        } catch (SQLException ignored) {
-            return false;
-        }
-    }
-
-    public boolean setMaxClaims(Group group, int max) {
-        try {
-            executeUpdate("UPDATE GROUPS SET MAX_CLAIMS = ? WHERE ID = ?", max, group.getId());
             return true;
         } catch (SQLException ignored) {
             return false;
@@ -684,15 +691,6 @@ public class Storage {
         }
     }
 
-    public boolean renameGroup(Group group, String name) {
-        try {
-            executeUpdate("UPDATE GROUPS SET NAME = ? WHERE ID = ?", name, group.getId());
-            return true;
-        } catch (SQLException ignored) {
-            return false;
-        }
-    }
-
     public void setBlockInteractable(Claim claim, Material material, boolean state) {
         try {
             executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), material.name(), state);
@@ -751,7 +749,6 @@ public class Storage {
             while (resultSet.next()) {
                 Chunk chunk = world.getChunkAt(resultSet.getInt("CHUNK_X"), resultSet.getInt("CHUNK_Z"), false);
 
-                ClaimManager claimManager = (ClaimManager) ClaimsApi.getApi();
                 HashMap<Chunk, Claim> loadedClaims = claimManager.getLoadedClaims();
                 if (loadedClaims.containsKey(chunk)) {
                     claims.add(loadedClaims.get(chunk));
@@ -764,7 +761,7 @@ public class Storage {
 
                 StoredClaim storedClaim = new StoredClaim(
                         claim_id,
-                        getGroup(resultSet.getInt("OWNER")),
+                        claimManager.getGroup(resultSet.getInt("OWNER")),
                         chunk,
                         List.of(),
                         List.of(),
@@ -783,6 +780,7 @@ public class Storage {
             return List.of();
         }
     }
+
 
     public void shutdown() {
         try {
