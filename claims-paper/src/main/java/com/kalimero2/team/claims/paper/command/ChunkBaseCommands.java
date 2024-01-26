@@ -194,16 +194,14 @@ public class ChunkBaseCommands extends CommandHandler {
                     messageUtil.sendMessage(player, "chunk.info.owner_group", Placeholder.unparsed("group", owner.getName()));
                 }
 
-                SimpleDateFormat dateFormat = new SimpleDateFormat(messageUtil.getMessageBundle().getString("generic.date_format"));
-                messageUtil.sendMessage(player, "chunk.info.claimed_since",
-                        Placeholder.unparsed("date", dateFormat.format(new Date(claim.getClaimedSince())))
-                );
+                if(player.hasPermission("claims.admin.info")){
+                    SimpleDateFormat dateFormat = new SimpleDateFormat(messageUtil.getMessageBundle().getString("generic.date_format"));
+                    messageUtil.sendMessage(player, "chunk.info.claimed_since",
+                            Placeholder.unparsed("date", dateFormat.format(new Date(claim.getClaimedSince())))
+                    );
 
-                if(api.getFlagState(claim, ClaimsFlags.NO_EXPIRATION)){
-                    messageUtil.sendMessage(player, "chunk.info.expire_disabled");
-                }else {
-                    messageUtil.sendMessage(player, "chunk.info.expires",
-                        Placeholder.unparsed("date", dateFormat.format(new Date(claim.getClaimedSince()))) // TODO: Implement expiration
+                    messageUtil.sendMessage(player, "chunk.info.last_online",
+                            Placeholder.unparsed("date", dateFormat.format(new Date(claim.getLastOnline())))
                     );
                 }
 
