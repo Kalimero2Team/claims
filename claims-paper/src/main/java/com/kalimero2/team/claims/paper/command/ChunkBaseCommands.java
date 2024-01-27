@@ -3,7 +3,6 @@ package com.kalimero2.team.claims.paper.command;
 import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.context.CommandContext;
 import com.kalimero2.team.claims.api.Claim;
-import com.kalimero2.team.claims.api.flag.ClaimsFlags;
 import com.kalimero2.team.claims.api.group.Group;
 import com.kalimero2.team.claims.api.group.GroupMember;
 import com.kalimero2.team.claims.api.group.PermissionLevel;
@@ -137,7 +136,7 @@ public class ChunkBaseCommands extends CommandHandler {
             Claim claim = api.getClaim(player.getChunk());
             if (claim != null) {
                 plugin.getMessageUtil().sendMessage(player, "chunk.claim.fail_already_claimed");
-            } else if (!plugin.getConfig().getStringList("claims.worlds").contains(player.getWorld().getWorldFolder().getName())) {
+            } else if (!plugin.getConfig().getStringList("claims.worlds").contains(player.getWorld().getWorldFolder().getName()) && !ChunkAdminCommands.forcedPlayers.contains(player.getUniqueId())) {
                 plugin.getMessageUtil().sendMessage(player, "chunk.claim.fail_world_not_claimable");
             } else {
                 Group playerGroup = api.getPlayerGroup(player);
