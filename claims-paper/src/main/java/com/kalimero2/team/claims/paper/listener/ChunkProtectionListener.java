@@ -9,6 +9,7 @@ import com.kalimero2.team.claims.api.interactable.MaterialInteractable;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import org.bukkit.Chunk;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -85,7 +86,7 @@ public class ChunkProtectionListener implements Listener {
             List<Group> members = claim.getMembers();
 
             Optional<Group> any = members.stream().filter(group -> api.getGroupMember(group, player) != null).findAny();
-            return any.isEmpty();
+            return any.isEmpty() && !player.getGameMode().equals(GameMode.SPECTATOR);
         }
         return false;
     }
