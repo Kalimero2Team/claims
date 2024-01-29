@@ -192,7 +192,10 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public Group getPlayerGroup(OfflinePlayer player) {
-        StoredGroup storedGroup = loadedGroups.values().stream().filter(group -> group.isPlayer() && player.equals(getGroupMember(group, player))).findFirst().orElse(null);
+        StoredGroup storedGroup = loadedGroups.values().stream().filter(group -> {
+            GroupMember groupMember = getGroupMember(group, player);
+            return group.isPlayer() && groupMember != null && player.equals(groupMember.getPlayer());
+        }).findFirst().orElse(null);
 
         if (storedGroup != null) {
             if (player.getName() != null && !storedGroup.getName().equals(player.getName())) {
@@ -205,6 +208,8 @@ public class ClaimManager implements ClaimsApi, Listener {
             return storedGroup;
         }
 
+        plugin.getLogger().warning("Player Group for " + player.getName() + " not found, loading from storage");
+
         Group playerGroup = storage.getPlayerGroup(player);
         if (playerGroup == null) {
             if (storage.createPlayerGroup(player, plugin.getConfig().getInt("claims.max-claims"))) {
@@ -214,6 +219,9 @@ public class ClaimManager implements ClaimsApi, Listener {
             }
         }
         loadedGroups.put(playerGroup.getId(), StoredGroup.cast(playerGroup));
+
+        refreshGroupInLoadedClaims(playerGroup);
+
         return playerGroup;
     }
 
@@ -471,10 +479,8 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        getGroups(event.getPlayer()).forEach(group -> {
-            storage.updateLastSeen(group);
-            refreshGroupInLoadedClaims(group);
-        });
+        getGroups(event.getPlayer()).forEach(this::refreshGroupInLoadedClaims);
+
         ChunkAdminCommands.forcedPlayers.remove(event.getPlayer().getUniqueId());
     }
 

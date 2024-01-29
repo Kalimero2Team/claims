@@ -198,10 +198,6 @@ public class ChunkBaseCommands extends CommandHandler {
                     messageUtil.sendMessage(player, "chunk.info.claimed_since",
                             Placeholder.unparsed("date", dateFormat.format(new Date(claim.getClaimedSince())))
                     );
-
-                    messageUtil.sendMessage(player, "chunk.info.last_online",
-                            Placeholder.unparsed("date", dateFormat.format(new Date(claim.getLastOnline())))
-                    );
                 }
 
                 List<Group> players = claim.getMembers().stream().filter(Group::isPlayer).toList();

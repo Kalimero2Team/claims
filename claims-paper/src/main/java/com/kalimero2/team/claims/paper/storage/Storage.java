@@ -424,28 +424,6 @@ public class Storage {
         }
     }
 
-    public List<Group> getGroups(OfflinePlayer player) {
-        try {
-            List<Group> groups = new ArrayList<>();
-
-            ResultSet resultSet = executeQuery("SELECT G.ID, G.NAME, G.MAX_CLAIMS, G.IS_PLAYER FROM GROUPS G INNER JOIN GROUP_MEMBERS GM ON G.ID = GM.GROUP_ID WHERE GM.PLAYER = ?", player.getUniqueId().toString());
-
-            while (resultSet.next()) {
-                int id = resultSet.getInt("ID");
-                String name = resultSet.getString("NAME");
-                int maxClaims = resultSet.getInt("MAX_CLAIMS");
-                boolean isPlayer = resultSet.getBoolean("IS_PLAYER");
-                List<GroupMember> members = getGroupMembers(id);
-                groups.add(new StoredGroup(id, name, maxClaims, isPlayer, members));
-            }
-            resultSet.close();
-
-            return groups;
-        } catch (SQLException ignored) {
-            return null;
-        }
-    }
-
     public List<Group> getGroups() {
         try {
             List<Group> groups = new ArrayList<>();
