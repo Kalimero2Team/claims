@@ -56,6 +56,24 @@ public class ChunkAdminCommands extends CommandHandler {
         commandManager.command(
                 commandManager.commandBuilder("chunk")
                         .literal("admin")
+                        .literal("info")
+                        .literal("group")
+                        .permission("claims.admin.info")
+                        .argument(GroupArgument.of("target"))
+                        .handler(this::infoGroup)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
+                        .literal("info")
+                        .literal("player")
+                        .permission("claims.admin.info")
+                        .argument(PlayerGroupArgument.of("target"))
+                        .handler(this::infoGroup)
+        );
+        commandManager.command(
+                commandManager.commandBuilder("chunk")
+                        .literal("admin")
                         .literal("setowner")
                         .literal("group")
                         .permission("claims.admin.setowner")
@@ -164,6 +182,22 @@ public class ChunkAdminCommands extends CommandHandler {
                         .literal("force")
                         .permission("claims.admin.force")
                         .handler(this::toggleForceMode)
+        );
+    }
+
+    private void infoGroup(CommandContext<CommandSender> context) {
+        Group target = context.get("target");
+
+        String name = target.getName();
+        int maxClaims = target.getMaxClaims();
+        int claimCount = api.getClaims(target).size();
+        int memberCount = target.getMembers().size();
+
+        messageUtil.sendMessage(context.getSender(), "chunk.admin.info.group",
+                Placeholder.unparsed("name", name),
+                Placeholder.unparsed("max_claims", String.valueOf(maxClaims)),
+                Placeholder.unparsed("claim_count", String.valueOf(claimCount)),
+                Placeholder.unparsed("member_count", String.valueOf(memberCount))
         );
     }
 

@@ -36,6 +36,7 @@ public interface ClaimsApi {
 
     /**
      * Gets all registered {@link Flag}s
+     *
      * @return all registered flags
      */
     List<Flag> getFlags();
@@ -69,8 +70,9 @@ public interface ClaimsApi {
 
     /**
      * Unsets the state of a flag in a claim
+     *
      * @param claim the claim to unset the flag state from
-     * @param flag the flag to unset the state from
+     * @param flag  the flag to unset the state from
      * @return true if successful, false otherwise
      */
     boolean unsetFlagState(Claim claim, Flag flag);
@@ -137,8 +139,20 @@ public interface ClaimsApi {
      *
      * @param player the player to get the groups from
      * @return the groups of the player
+     * @see #getGroups(OfflinePlayer, PermissionLevel) to get the groups of a player where the player has at least the specified permission level
      */
-    List<Group> getGroups(OfflinePlayer player);
+    default List<Group> getGroups(OfflinePlayer player) {
+        return getGroups(player, PermissionLevel.MEMBER);
+    }
+
+    /**
+     * Gets the groups of a player where the player has at least the specified permission level
+     *
+     * @param player          the player to get the groups from
+     * @param permissionLevel the minimum permission level
+     * @return the groups of the player
+     */
+    List<Group> getGroups(OfflinePlayer player, PermissionLevel permissionLevel);
 
     /**
      * Get a group by its id
@@ -183,7 +197,7 @@ public interface ClaimsApi {
     /**
      * Sets the permission level of a member
      *
-     * @param group the group to set the permission level
+     * @param group  the group to set the permission level
      * @param member the member to set the permission level
      * @param level  the permission level to set
      * @return true if successful, false otherwise
@@ -296,7 +310,7 @@ public interface ClaimsApi {
      * Create a new group
      *
      * @param player the group to create
-     * @param name the name of the group
+     * @param name   the name of the group
      * @return the new group or null if failed
      */
     @Nullable Group createGroup(OfflinePlayer player, String name);
@@ -313,7 +327,7 @@ public interface ClaimsApi {
      * Rename a group
      *
      * @param group the group to rename
-     * @param name the new name of the group
+     * @param name  the new name of the group
      * @return true if successful, false otherwise
      */
     boolean renameGroup(Group group, String name);
@@ -322,26 +336,26 @@ public interface ClaimsApi {
     /**
      * Sets if all players can interact with a block in a claim
      *
-     * @param claim the claim to set the interactable state
+     * @param claim    the claim to set the interactable state
      * @param material the material of the interactable block
-     * @param state the state if all players can interact with the block
+     * @param state    the state if all players can interact with the block
      */
     void setBlockInteractable(Claim claim, Material material, boolean state);
 
     /**
      * Sets if all players can interact with an entity in a claim
      *
-     * @param claim the claim to set the interactable state
+     * @param claim      the claim to set the interactable state
      * @param entityType the entity type of the interactable entity
-     * @param damage if all players can damage the entity
-     * @param interact if all players can interact with the entity
+     * @param damage     if all players can damage the entity
+     * @param interact   if all players can interact with the entity
      */
     void setEntityInteractable(Claim claim, EntityType entityType, boolean damage, boolean interact);
 
     /**
      * Removes the interactive state from a block
      *
-     * @param claim the claim to remove the interactable state
+     * @param claim    the claim to remove the interactable state
      * @param material the material of the interactable block
      */
     void removeBlockInteractable(Claim claim, Material material);
@@ -349,7 +363,7 @@ public interface ClaimsApi {
     /**
      * Removes the interactive states from an entity
      *
-     * @param claim the claim to remove the interactable state
+     * @param claim      the claim to remove the interactable state
      * @param entityType the entity type of the interactable entity
      */
     void removeEntityInteractable(Claim claim, EntityType entityType);
@@ -357,7 +371,8 @@ public interface ClaimsApi {
 
     /**
      * Sets the owner of a chunk
-     * @param chunk the chunk to set the owner
+     *
+     * @param chunk  the chunk to set the owner
      * @param target the new owner of the chunk
      */
     void setOwner(Chunk chunk, Group target);

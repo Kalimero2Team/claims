@@ -2,6 +2,8 @@ package com.kalimero2.team.claims.api.group;
 
 import org.bukkit.OfflinePlayer;
 
+import java.util.Objects;
+
 public abstract class GroupMember {
 
     private final OfflinePlayer player;
@@ -29,5 +31,18 @@ public abstract class GroupMember {
      */
     public PermissionLevel getPermissionLevel() {
         return permissionLevel;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GroupMember that = (GroupMember) o;
+        return Objects.equals(player, that.player) && permissionLevel == that.permissionLevel;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(player, permissionLevel);
     }
 }
