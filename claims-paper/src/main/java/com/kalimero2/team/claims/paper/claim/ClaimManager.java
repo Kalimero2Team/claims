@@ -37,7 +37,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -60,12 +59,10 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     public ClaimManager(PaperClaims plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        this.storage = new Storage(plugin, this, new File(plugin.getDataFolder() + "/" + plugin.getConfig().getString("database")));;
+        this.storage = new Storage(plugin, this, new File(plugin.getDataFolder() + "/" + plugin.getConfig().getString("database")));
         this.plugin = plugin;
 
-        storage.getGroups().forEach(group -> {
-            loadedGroups.put(group.getId(), StoredGroup.cast(group));
-        });
+        storage.getGroups().forEach(group -> loadedGroups.put(group.getId(), StoredGroup.cast(group)));
     }
 
     @Override
@@ -283,7 +280,9 @@ public class ClaimManager implements ClaimsApi, Listener {
 
     @Override
     public @Nullable GroupMember getGroupMember(Group group, OfflinePlayer player) {
-        return group.getMembers().stream().filter(member -> member.getPlayer().equals(player)).findFirst().orElse(null);
+        return group.getMembers().stream()
+                .filter(member -> member.getPlayer().getUniqueId().equals(player.getUniqueId()))
+                .findFirst().orElse(null);
     }
 
     @Override
@@ -460,12 +459,15 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (claim != null) {
             Group owner = claim.getOwner();
             new ClaimOwnerChangeEvent(chunk, owner, target, claim).callEvent();
-        }
 
-        if (loadedClaims.containsKey(chunk)) {
-            StoredClaim.cast(loadedClaims.get(chunk)).setOwner(target);
-        } else {
-            storage.setOwner(chunk, target);
+            if (loadedClaims.containsKey(chunk)) {
+                StoredClaim storedClaim = StoredClaim.cast(claim);
+                storedClaim.setOwner(target);
+                storedClaim.addMember(target);
+            }
+            storage.setOwner(chunk, target); // We need to save the owner change to the database, because getClaims(Group) would return the old owner
+        }else {
+            plugin.getLogger().warning("Could not set owner of chunk " + chunk.getX() + " " + chunk.getZ() + " to " + target.getName() + " because the chunk is not claimed");
         }
     }
 
@@ -475,6 +477,7 @@ public class ClaimManager implements ClaimsApi, Listener {
         if (playerGroup == null) {
             event.getPlayer().kick(Component.text("Could not create player group. Please contact an administrator"));
         }
+        getGroups(event.getPlayer()).forEach(this::refreshGroupInLoadedClaims);
     }
 
     @EventHandler

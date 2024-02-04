@@ -294,7 +294,7 @@ public class Storage {
             return false;
         }
     }
-    
+
     public boolean saveGroup(Group group) {
         try {
             StoredGroup storedGroup = StoredGroup.cast(group);
@@ -303,7 +303,7 @@ public class Storage {
             String name = storedGroup.getName();
             int maxClaims = storedGroup.getMaxClaims();
 
-            if(!storedGroup.originalMembers.equals(members)){
+            if (!storedGroup.originalMembers.equals(members)) {
                 // Update Members
                 executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ?", group.getId());
                 for (GroupMember member : members) {
@@ -311,18 +311,18 @@ public class Storage {
                 }
             }
 
-            if(!storedGroup.originalName.equals(name)){
+            if (!storedGroup.originalName.equals(name)) {
                 // Update Name
                 executeUpdate("UPDATE GROUPS SET NAME = ? WHERE ID = ?", name, group.getId());
             }
 
-            if(storedGroup.originalMaxClaims != maxClaims){
+            if (storedGroup.originalMaxClaims != maxClaims) {
                 // Update Max Claims
                 executeUpdate("UPDATE GROUPS SET MAX_CLAIMS = ? WHERE ID = ?", maxClaims, group.getId());
             }
 
             return true;
-        }catch (SQLException exception) {
+        } catch (SQLException exception) {
             plugin.getLogger().severe("Error while saving group " + group.getName() + " with error: " + exception.getMessage());
             return false;
         }
@@ -729,27 +729,25 @@ public class Storage {
                 HashMap<Chunk, Claim> loadedClaims = claimManager.getLoadedClaims();
                 if (loadedClaims.containsKey(chunk)) {
                     claims.add(loadedClaims.get(chunk));
-                    continue;
+                } else {
+                    int claim_id = resultSet.getInt("ID");
+
+                    // TODO: Implement lazy loading, for members, flags, interactables (flags are currently loaded because they are needed for the squaremap integration)
+                    StoredClaim storedClaim = new StoredClaim(
+                            claim_id,
+                            claimManager.getGroup(resultSet.getInt("OWNER")),
+                            chunk,
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            getFlags(claim_id),
+                            resultSet.getLong("CLAIMED_SINCE"),
+                            resultSet.getLong("LAST_INTERACTION"),
+                            resultSet.getLong("LAST_ONLINE")
+                    );
+
+                    claims.add(storedClaim);
                 }
-
-                int claim_id = resultSet.getInt("ID");
-
-                // TODO: Implement lazy loading, for members, flags, interactables (flags are currently loaded because they are needed for the squaremap integration)
-
-                StoredClaim storedClaim = new StoredClaim(
-                        claim_id,
-                        claimManager.getGroup(resultSet.getInt("OWNER")),
-                        chunk,
-                        List.of(),
-                        List.of(),
-                        List.of(),
-                        getFlags(claim_id),
-                        resultSet.getLong("CLAIMED_SINCE"),
-                        resultSet.getLong("LAST_INTERACTION"),
-                        resultSet.getLong("LAST_ONLINE")
-                );
-
-                claims.add(storedClaim);
             }
             resultSet.close();
             return claims;
