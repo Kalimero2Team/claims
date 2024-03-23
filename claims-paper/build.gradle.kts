@@ -16,7 +16,7 @@ repositories {
 dependencies {
     compileOnly(libs.paper.api)
     bukkitLibrary(libs.cloud.paper)
-    bukkitLibrary("org.apache.commons:commons-dbcp2:2.11.0")
+    bukkitLibrary(libs.commons.dbcp2)
     implementation(project(":claims-api"))
 }
 
