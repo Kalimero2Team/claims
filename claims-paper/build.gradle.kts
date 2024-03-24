@@ -25,7 +25,7 @@ tasks{
         dependsOn(shadowJar)
     }
     runServer{
-        minecraftVersion("1.20.1")
+        minecraftVersion("1.20.4")
     }
 }
 

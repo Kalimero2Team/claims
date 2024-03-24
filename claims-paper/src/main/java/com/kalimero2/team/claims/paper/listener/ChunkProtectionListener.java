@@ -28,7 +28,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Ravager;
 import org.bukkit.entity.Steerable;
-import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.WitherSkull;
@@ -414,8 +413,8 @@ public class ChunkProtectionListener implements Listener {
             if (api.getClaim(event.getBlock().getChunk()) != null) {
                 event.setCancelled(true);
             }
-        } else if (event.getEntity() instanceof ThrownPotion thrownPotion) { // A Thrown potion can dowse fire
-            if (thrownPotion.getShooter() instanceof Player player) {
+        } else if (event.getEntity() instanceof Projectile projectile) {
+            if (projectile.getShooter() instanceof Player player) {
                 if (shouldCancel(player, event.getBlock().getChunk())) {
                     event.setCancelled(true);
                 }
@@ -444,12 +443,9 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onBlockIgnite(BlockIgniteEvent event) {
-        if (event.getCause().equals(BlockIgniteEvent.IgniteCause.ARROW)) {
-            Claim claim = api.getClaim(event.getBlock().getChunk());
-            if (shouldCancel(event.getPlayer(), claim)) {
-                if (claim.getMaterialInteractables().stream().map(MaterialInteractable::getBlockMaterial).toList().contains(Material.CAMPFIRE)) {
-                    event.setCancelled(true);
-                }
+        if (event.getIgnitingEntity() instanceof Player player) {
+            if (shouldCancel(player, event.getBlock().getChunk())) {
+                event.setCancelled(true);
             }
         }
     }
@@ -504,15 +500,7 @@ public class ChunkProtectionListener implements Listener {
             event.setCancelled(true);
         }
 
-        event.getBlocks().removeIf(block -> {
-            Chunk destChunk = block.getChunk();
-
-            if (shouldCancel(originChunk, destChunk)) {
-                return true;
-            } else {
-                return false;
-            }
-        });
+        event.getBlocks().removeIf(block -> shouldCancel(originChunk, block.getChunk()));
     }
 
     @EventHandler
