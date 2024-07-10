@@ -25,8 +25,21 @@ tasks{
         dependsOn(shadowJar)
     }
     runServer{
-        minecraftVersion("1.20.4")
+        downloadPlugins {
+            // ViaVersion
+            modrinth("viaversion","5.0.2-SNAPSHOT+457")
+            // squaremap
+            modrinth("squaremap", "1.2.4")
+            // Geyser (in this case Thermalquelle)
+            github("Kalimero2Team", "Thermalquelle","latest-dev", "Geyser-Spigot.jar")
+            // Floodgate
+            url("https://download.geysermc.org/v2/projects/floodgate/versions/2.2.3/builds/109/downloads/spigot")
+        }
+
+        minecraftVersion("1.20.6")
     }
+
+
 }
 
 bukkit {
