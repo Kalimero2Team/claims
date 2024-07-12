@@ -13,13 +13,13 @@ dependencyResolutionManagement{
             plugin("paper-run","xyz.jpenilla.run-paper").version("2.2.3")
             plugin("plugin-yml","net.minecrell.plugin-yml.bukkit").version("0.6.0")
 
-            library("paper-api","io.papermc.paper","paper-api").version("1.20.4-R0.1-SNAPSHOT")
+            library("paper-api","io.papermc.paper","paper-api").version("1.20.6-R0.1-SNAPSHOT")
 
             library("cloud-paper","cloud.commandframework","cloud-paper").versionRef("cloud")
 
             // SquareMap Integration
 
-            library("squaremap-api","xyz.jpenilla","squaremap-api").version("1.2.3")
+            library("squaremap-api","xyz.jpenilla","squaremap-api").version("1.2.5")
             library("commons-dbcp2","org.apache.commons","commons-dbcp2").version("2.12.0")
         }
     }
