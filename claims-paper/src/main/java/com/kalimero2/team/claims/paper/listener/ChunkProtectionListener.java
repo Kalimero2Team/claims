@@ -453,18 +453,22 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler
     public void onEntityInteract(EntityInteractEvent event) {
-        if (api.getClaim(event.getBlock().getChunk()) != null) {
-            if (event.getEntity() instanceof Steerable steerable) {
-                // TODO: Remove this (temporary) because GeyserHacks isn't working in 1.19.4+
-                // EntityInteractEvent isn't called when a Java Player is riding with a pig over a pressure plate but when a Bedrock Player is riding with a pig over a pressure plate the event is fired (because GeyserHacks is "faking" the Riding and causes the event to be fired). For Java players it is probably another event or a Bukkit bug.
-                Optional<Entity> any = steerable.getPassengers().stream().filter(entity -> entity instanceof Player).findAny();
-                if (any.isEmpty()) {
-                    event.setCancelled(true);
-                }
-            } else {
-                event.setCancelled(true);
-            }
+        Claim claim = api.getClaim(event.getBlock().getChunk());
+        if (claim == null) return;
+
+        // entity interact
+        if (api.getFlagState(claim, ClaimsFlags.ENTITIES_INTERACT_INDEPENDENTLY)) {
+            return;
         }
+
+        // player riding
+        if (event.getEntity() instanceof Steerable steerable) {
+            // TODO: Remove this (temporary) because GeyserHacks isn't working in 1.19.4+
+            // EntityInteractEvent isn't called when a Java Player is riding with a pig over a pressure plate but when a Bedrock Player is riding with a pig over a pressure plate the event is fired (because GeyserHacks is "faking" the Riding and causes the event to be fired). For Java players it is probably another event or a Bukkit bug.
+            if (steerable.getPassengers().stream().anyMatch(entity -> entity instanceof Player)) return;
+        }
+
+        event.setCancelled(true);
     }
 
     @EventHandler
