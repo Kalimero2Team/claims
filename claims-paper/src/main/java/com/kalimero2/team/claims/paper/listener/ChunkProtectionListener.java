@@ -457,7 +457,7 @@ public class ChunkProtectionListener implements Listener {
         if (claim == null) return;
 
         // entity interact
-        if (api.getFlagState(claim, ClaimsFlags.ENTITIES_INTERACT_INDEPENDENTLY)) {
+        if (api.getFlagState(claim, ClaimsFlags.ENTITY_INTERACT)) {
             return;
         }
 
