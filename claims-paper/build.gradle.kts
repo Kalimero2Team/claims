@@ -8,7 +8,7 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven("https://papermc.io/repo/repository/maven-public/")
+    maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.opencollab.dev/maven-snapshots/")
     maven("https://hub.jeff-media.com/nexus/repository/jeff-media-public/")
 }

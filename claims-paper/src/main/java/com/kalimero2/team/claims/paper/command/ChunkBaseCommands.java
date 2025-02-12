@@ -200,8 +200,10 @@ public class ChunkBaseCommands extends CommandHandler {
                     );
                 }
 
-                List<Group> players = claim.getMembers().stream().filter(Group::isPlayer).toList();
-                List<Group> groups = claim.getMembers().stream().filter(group -> !group.isPlayer()).toList();
+                List<Group> members = claim.getMembers();
+
+                List<Group> players = members.stream().filter(Group::isPlayer).toList();
+                List<Group> groups = members.stream().filter(group -> !group.isPlayer()).toList();
 
                 if (!players.isEmpty()) {
                     messageUtil.sendMessage(player, "chunk.info.trusted_player_header");

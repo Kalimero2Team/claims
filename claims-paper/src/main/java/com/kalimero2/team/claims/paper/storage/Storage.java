@@ -25,7 +25,6 @@ import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.sql.Connection;
@@ -37,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("CallToPrintStackTrace")
 public class Storage {
 
     private final PaperClaims plugin;
@@ -50,15 +50,7 @@ public class Storage {
 
         try {
             Class.forName("org.sqlite.JDBC");
-            String connectionUri = "jdbc:sqlite:" + dataBase.getPath();
-
-            ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectionUri, null);
-            PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
-            ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory);
-            poolableConnectionFactory.setPool(connectionPool);
-
-            PoolingDataSource<PoolableConnection> dataSource =
-                    new PoolingDataSource<>(connectionPool);
+            PoolingDataSource<PoolableConnection> dataSource = getDataSource(dataBase);
 
             connection = dataSource.getConnection();
 
@@ -76,6 +68,17 @@ public class Storage {
         }
     }
 
+    private static @NotNull PoolingDataSource<PoolableConnection> getDataSource(File dataBase) {
+        String connectionUri = "jdbc:sqlite:" + dataBase.getPath();
+
+        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectionUri, null);
+        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+        ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory);
+        poolableConnectionFactory.setPool(connectionPool);
+
+        return new PoolingDataSource<>(connectionPool);
+    }
+
 
     private ResultSet executeQuery(@Language(value = "SQL") String query, Object... args) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(query);
@@ -85,6 +88,7 @@ public class Storage {
         return statement.executeQuery();
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     private int executeUpdate(@Language(value = "SQL") String sql, Object... args) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(sql);
         for (int i = 0; i < args.length; i++) {
@@ -329,7 +333,7 @@ public class Storage {
     }
 
 
-    private @Nullable HashMap<Flag, Boolean> getFlags(int claimId) {
+    private HashMap<Flag, Boolean> getFlags(int claimId) {
         try {
             HashMap<Flag, Boolean> flags = new HashMap<>();
             ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_FLAGS WHERE CLAIM_ID = ?", claimId);
@@ -346,12 +350,13 @@ public class Storage {
             resultSet.close();
 
             return flags;
-        } catch (SQLException ignored) {
-            return null;
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Error while getting flags for claim " + claimId);
+            return new HashMap<>();
         }
     }
 
-    private @Nullable List<EntityInteractable> getEntityInteractables(int id) {
+    private List<EntityInteractable> getEntityInteractables(int id) {
         try {
             List<EntityInteractable> interactables = new ArrayList<>();
             ResultSet resultSet = executeQuery("SELECT * FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", id);
@@ -364,12 +369,13 @@ public class Storage {
             resultSet.close();
 
             return interactables;
-        } catch (SQLException ignored) {
-            return null;
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Error while getting entity interactables for claim " + id);
+            return List.of();
         }
     }
 
-    private @Nullable List<MaterialInteractable> getBlockInteractables(int id) {
+    private List<MaterialInteractable> getBlockInteractables(int id) {
         try {
             List<MaterialInteractable> interactables = new ArrayList<>();
             ResultSet resultSet = executeQuery("SELECT * FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", id);
@@ -381,8 +387,9 @@ public class Storage {
             resultSet.close();
 
             return interactables;
-        } catch (SQLException ignored) {
-            return null;
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Error while loading block interactables " + id + " with error: " + sqlException.getMessage());
+            return List.of();
         }
     }
 
@@ -399,8 +406,10 @@ public class Storage {
             resultSet.close();
 
             return groupMembers;
-        } catch (SQLException ignored) {
-            return null;
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Error while loading members of group " + group_id + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
+            return List.of();
         }
     }
 
@@ -419,7 +428,10 @@ public class Storage {
             } else {
                 return null;
             }
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            String name = player.getName() == null ? "(no cached name found) uuid: " + player.getUniqueId() : player.getName();
+            plugin.getLogger().severe("Error while loading player group " + name + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return null;
         }
     }
@@ -441,8 +453,10 @@ public class Storage {
             resultSet.close();
 
             return groups;
-        } catch (SQLException ignored) {
-            return null;
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to load groups from database: " + sqlException.getMessage());
+            sqlException.printStackTrace();
+            return List.of();
         }
     }
 
@@ -452,13 +466,20 @@ public class Storage {
             ResultSet resultSet = executeQuery("SELECT * FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim_id);
             while (resultSet.next()) {
                 int group_id = resultSet.getInt("GROUP_ID");
-                members.add(claimManager.getGroup(group_id));
+                Group group = claimManager.getGroup(group_id);
+                if (group != null) {
+                    members.add(group);
+                } else {
+                    plugin.getLogger().severe("Group " + group_id + " not found");
+                }
             }
             resultSet.close();
 
             return members;
-        } catch (SQLException ignored) {
-            return null;
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to load members for claim " + claim_id + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
+            return List.of();
         }
     }
 
@@ -466,7 +487,9 @@ public class Storage {
         try {
             executeUpdate("INSERT INTO GROUPS (NAME, MAX_CLAIMS, IS_PLAYER) VALUES (?, ?, ?)", name, maxClaims, isPlayer);
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to create group " + name + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -476,7 +499,9 @@ public class Storage {
             executeUpdate("INSERT INTO GROUPS (NAME, MAX_CLAIMS, IS_PLAYER) VALUES (?, ?, ?)", player.getName(), maxClaims, true);
             executeUpdate("INSERT INTO GROUP_MEMBERS (GROUP_ID, PLAYER, PERMISSION_LEVEL) VALUES ((SELECT ID FROM GROUPS WHERE NAME = ? AND IS_PLAYER = TRUE), ?, ?)", player.getName(), player.getUniqueId().toString(), PermissionLevel.OWNER.getLevel());
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to create player group " + player.getName() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -486,7 +511,9 @@ public class Storage {
             executeUpdate("DELETE FROM GROUPS WHERE ID = ?", group.getId());
             executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ?", group.getId());
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to delete group " + group.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -495,7 +522,9 @@ public class Storage {
         try {
             executeUpdate("INSERT INTO GROUP_MEMBERS (GROUP_ID, PLAYER, PERMISSION_LEVEL) VALUES (?, ?, ?)", group.getId(), player.getUniqueId().toString(), level.getLevel());
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to add group member " + group.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -504,7 +533,11 @@ public class Storage {
         try {
             executeUpdate("DELETE FROM GROUP_MEMBERS WHERE GROUP_ID = ? AND PLAYER = ?", group.getId(), member.getPlayer().getUniqueId().toString());
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            String name = member.getPlayer().getName();
+            name = name == null ? "(no cached name found) uuid=" + member.getPlayer().getUniqueId() : name;
+            plugin.getLogger().severe("Failed to remove group member " + name + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -513,14 +546,17 @@ public class Storage {
         try {
             executeUpdate("UPDATE GROUP_MEMBERS SET PERMISSION_LEVEL = ? WHERE GROUP_ID = ? AND PLAYER = ?", level.getLevel(), group.getId(), member.getPlayer().getUniqueId().toString());
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            String name = member.getPlayer().getName();
+            name = name == null ? "(no cached name found) uuid=" + member.getPlayer().getUniqueId() : name;
+            plugin.getLogger().severe("Failed to set permission level " + name + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
 
     public boolean unclaimChunk(Claim claim) {
         try {
-
             executeUpdate("DELETE FROM CLAIMS WHERE ID = ?", claim.getId());
             executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
             executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ?", claim.getId());
@@ -528,7 +564,9 @@ public class Storage {
             executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ?", claim.getId());
 
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to unclaim chunk " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -553,7 +591,9 @@ public class Storage {
             executeUpdate("INSERT INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", getClaimData(chunk).getId(), group.getId());
 
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to claim chunk " + group.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -569,7 +609,9 @@ public class Storage {
             resultSet.close();
 
             return null;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to get group member " + player.getUniqueId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return null;
         }
 
@@ -593,8 +635,10 @@ public class Storage {
             resultSet.close();
 
             return claims;
-        } catch (SQLException ignored) {
-            return null;
+        } catch (SQLException sqlException) {
+            plugin.getLogger().warning("Failed to get claims from group " + group.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
+            return List.of();
         }
     }
 
@@ -608,7 +652,9 @@ public class Storage {
             }
             resultSet.close();
             return 0;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to get claim amount from group " + group.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return null;
         }
     }
@@ -618,16 +664,18 @@ public class Storage {
             // TODO: Make this better
             executeUpdate("INSERT OR IGNORE INTO CLAIM_FLAGS (CLAIM_ID, FLAG_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), flag.getKey().toString(), state);
             executeUpdate("UPDATE CLAIM_FLAGS SET STATE = ? WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", state, claim.getId(), flag.getKey().toString());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to set flag " + flag.getKey() + " for claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
     public void unsetFlagState(Claim claim, Flag flag) {
         try {
             executeUpdate("DELETE FROM CLAIM_FLAGS WHERE CLAIM_ID = ? AND FLAG_IDENTIFIER = ?", claim.getId(), flag.getKey().toString());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to unset flag " + flag.getKey() + " for claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
@@ -635,7 +683,9 @@ public class Storage {
         try {
             executeUpdate("INSERT INTO CLAIM_MEMBERS (CLAIM_ID, GROUP_ID) VALUES (?, ?)", claim.getId(), group.getId());
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to add group " + group.getId() + " to claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -644,7 +694,9 @@ public class Storage {
         try {
             executeUpdate("DELETE FROM CLAIM_MEMBERS WHERE CLAIM_ID = ? AND GROUP_ID = ?", claim.getId(), group.getId());
             return true;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to remove group " + group.getId() + " from claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return false;
         }
     }
@@ -663,7 +715,9 @@ public class Storage {
             resultSet.close();
 
             return null;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to get group with name \"" + name + "\" with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
             return null;
         }
     }
@@ -672,8 +726,9 @@ public class Storage {
         try {
             executeUpdate("INSERT OR IGNORE INTO BLOCK_INTERACTABLES (CLAIM_ID, BLOCK_IDENTIFIER, STATE) VALUES (?, ?, ?)", claim.getId(), material.name(), state);
             executeUpdate("UPDATE BLOCK_INTERACTABLES SET STATE = ? WHERE CLAIM_ID = ? AND BLOCK_IDENTIFIER = ?", state, claim.getId(), material.name());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to set block interactable for material " + material.name() + " on claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
@@ -681,43 +736,49 @@ public class Storage {
         try {
             executeUpdate("INSERT OR IGNORE INTO ENTITY_INTERACTABLES (CLAIM_ID, ENTITY_IDENTIFIER, INTERACT, DAMAGE) VALUES (?, ?, ?, ?)", claim.getId(), entityType.name(), interact, damage);
             executeUpdate("UPDATE ENTITY_INTERACTABLES SET INTERACT = ?, DAMAGE = ? WHERE CLAIM_ID = ? AND ENTITY_IDENTIFIER = ?", interact, damage, claim.getId(), entityType.name());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to set entity interactable for " + entityType.name() + " on claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
     public void removeBlockInteractable(Claim claim, Material material) {
         try {
             executeUpdate("DELETE FROM BLOCK_INTERACTABLES WHERE CLAIM_ID = ? AND BLOCK_IDENTIFIER = ?", claim.getId(), material.name());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to remove block interactable for material " + material.name() + " on claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
     public void removeEntityInteractable(Claim claim, EntityType entityType) {
         try {
             executeUpdate("DELETE FROM ENTITY_INTERACTABLES WHERE CLAIM_ID = ? AND ENTITY_IDENTIFIER = ?", claim.getId(), entityType.name());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to remove entity interactable for " + entityType.name() + " on claim " + claim.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
     public void updateLastSeen(Group group) {
         try {
             executeUpdate("UPDATE CLAIMS SET LAST_ONLINE = ? WHERE OWNER = ?", System.currentTimeMillis(), group.getId());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to update last seen for group" + group.getName() + "with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
     public void setOwner(Chunk chunk, Group target) {
         try {
             executeUpdate("UPDATE CLAIMS SET OWNER = ? WHERE CHUNK_X = ? AND CHUNK_Z = ? AND WORLD = ?", target.getId(), chunk.getX(), chunk.getZ(), chunk.getWorld().getUID().toString());
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to set owner for claim " + target.getId() + " with error: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated(forRemoval = true)
     public List<Claim> getClaims(World world) {
         try {
@@ -751,7 +812,9 @@ public class Storage {
             }
             resultSet.close();
             return claims;
-        } catch (SQLException ignored) {
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to get claims for " + world.getUID());
+            sqlException.printStackTrace();
             return List.of();
         }
     }
@@ -760,8 +823,9 @@ public class Storage {
     public void shutdown() {
         try {
             connection.close();
-        } catch (SQLException ignored) {
-
+        } catch (SQLException sqlException) {
+            plugin.getLogger().severe("Failed to close connection: " + sqlException.getMessage());
+            sqlException.printStackTrace();
         }
     }
 }
