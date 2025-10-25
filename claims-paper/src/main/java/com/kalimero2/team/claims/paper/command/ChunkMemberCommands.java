@@ -9,6 +9,7 @@ import com.kalimero2.team.claims.api.group.PermissionLevel;
 import com.kalimero2.team.claims.paper.command.argument.GroupArgument;
 import com.kalimero2.team.claims.paper.command.argument.PlayerGroupArgument;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -28,7 +29,11 @@ public class ChunkMemberCommands extends CommandHandler {
                     List<String> suggestions = new ArrayList<>();
                     for (Group group : api.getGroups()) {
                         if (group.isPlayer()) {
-                            if (group.getMembers().get(0).getPlayer().isOnline()) {
+                            OfflinePlayer player = group.getMembers().get(0).getPlayer();
+                            if (player.isOnline()) {
+                                if(context.getSender() instanceof Player sender && player.getPlayer() != null){
+                                    sender.canSee(player.getPlayer());
+                                }
                                 suggestions.add(group.getName());
                             }
                         }
