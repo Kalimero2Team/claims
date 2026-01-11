@@ -20,7 +20,7 @@ dependencyResolutionManagement{
             // SquareMap Integration
 
             library("squaremap-api","xyz.jpenilla","squaremap-api").version("1.2.5")
-            library("commons-dbcp2","org.apache.commons","commons-dbcp2").version("2.13.0")
+            library("commons-dbcp2","org.apache.commons","commons-dbcp2").version("2.14.0")
         }
     }
 }
