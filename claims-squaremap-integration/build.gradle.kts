@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly(platform("org.spongepowered:configurate-bom:4.1.2"))
+    compileOnly(platform("org.spongepowered:configurate-bom:4.2.0"))
     compileOnly("org.spongepowered:configurate-yaml")
 
     compileOnly(libs.paper.api)
